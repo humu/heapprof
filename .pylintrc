@@ -1,0 +1,28 @@
+[MESSAGES CONTROL]
+
+# Currently, we just use pylint for name checks, and flake8 for everything else:
+disable=all
+enable=invalid-name
+
+[BASIC]
+
+# Class names must be UpperCamelCase:
+class-rgx=_?_?[A-Z][a-zA-Z0-9]+$
+
+# "Constants" are just top-level variables, so we allow both:
+const-rgx=_?_?([a-z][a-zA-Z0-9]*|[A-Z_][A-Z0-9_]*)$
+
+attr-rgx=_?_?([a-z][a-zA-Z0-9]*|[A-Z_][A-Z0-9_]*)$
+
+# Class attributes can be named like camelCase or UPPER_CASE:
+class-attribute-rgx=_?_?([a-z][a-zA-Z0-9]*|[A-Z_][A-Z0-9_]*)$
+
+function-rgx=_?_?[a-z][a-zA-Z0-9]*$
+method-rgx=(_?_?[a-z][a-zA-Z0-9]*|__.+__|test[A-Za-z]_[a-zA-Z0-9_]+)$
+
+# Only one "_" for argument names:
+argument-rgx=_?[a-z][a-zA-Z0-9]*$
+variable-rgx=_?[a-z][a-zA-Z0-9]*$
+
+# "inlinevars" are like `x` in `for x in y:`:
+inlinevar-rgx=[a-z][a-zA-Z0-9]*$
