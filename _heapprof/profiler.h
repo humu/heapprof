@@ -10,7 +10,7 @@
 
 // Profiler is the heart of heap profiling. When the profiler is on, a
 // singleton Profiler exists, and is patched into the malloc calls using
-// the standard hooks, by the logic in _heapprof.cc; to end profiling, it is
+// the standard hooks, by the logic in heapprof.cc; to end profiling, it is
 // simply unpatched and deleted.
 //
 // All the real work happens in this file, as the patched calls trigger

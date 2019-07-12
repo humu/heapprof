@@ -33,20 +33,9 @@ Profiler::Profiler(const char *filebase, Sampler *sampler) : sampler_(sampler) {
     return;
   }
 
+  // Initialize our clock and write initial metadata.
   clock_gettime(CLOCK_REALTIME, &last_clock_);
-
-  // Write out the initial metadata. The wire format of this metadata is:
-  //   fixed32: File format version (currently 1)
-  //   fixed64: Initial clock value.seconds
-  //   fixed64: Initial clock value.nsec
-  //   varint32: Number of sampling ranges
-  //     fixed64: max size
-  //     fixed32: Probability scaled to UINT32_MAX
-  WriteFixed32ToFile(metadata_file_, 1);
-  WriteFixed64ToFile(metadata_file_, last_clock_.tv_sec);
-  WriteFixed64ToFile(metadata_file_, last_clock_.tv_nsec);
-  sampler_->WriteStateToFile(metadata_file_);
-
+  WriteMetadata(metadata_file_, last_clock_, *sampler_);
   ok_ = true;
 }
 
