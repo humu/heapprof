@@ -7,7 +7,9 @@ from typing import Dict, Optional, cast
 import heapprof
 
 parser = argparse.ArgumentParser('heapprof')
-parser.add_argument('-m', '--mode', choices=('profile', 'stats'), help='Profiler mode selection')
+parser.add_argument(
+    '-m', '--mode', choices=('profile', 'stats'), help='Profiler mode selection', default='profile'
+)
 parser.add_argument('-o', '--output', help='Output file base', default='hprof')
 parser.add_argument('--sample', help='Sampling rate dictionary')
 parser.add_argument('command', nargs='+')
@@ -29,8 +31,10 @@ globs = {'__file__': progname, '__name__': '__main__', '__package__': None, '__c
 
 if args.mode == 'profile':
     heapprof.start(args.output, sampleRate)
-else:
+elif args.mode == 'stats':
     heapprof.gatherStats()
+else:
+    raise ValueError('Unknown mode [{args.mode}]')
 
 try:
     exec(code, globs, None)

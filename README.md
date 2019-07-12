@@ -151,6 +151,10 @@ Some tips for choosing a good sampling rate:
 Of interest primarily if you need to understand the internals of heapprof or details of its
 behavior:
 
+* The performance overhead of heapprof hasn't yet been measured. From a rough eyeball estimate, it
+    seems to be significant during the initial import of modules (because those generate so many
+    distinct stack traces) but fairly low (similar to cProfile) during code execution. This will
+    need to be measured and performance presumably tuned.
 * The .hpx file format is optimized around minimizing overhead at runtime. The idea is that the
     profiler continuously writes to the two open file descriptors, and relies on the kernel's
     buffering in the file system implementation to minimize that impact; to use that buffering most
@@ -186,8 +190,19 @@ Pull requests for bugfixes and features are welcome! Generally, you should discu
 changes on the tracking issue first, to make sure everyone is aligned on direction. Python code
 should follow PEP8+[Black](https://github.com/python/black) formatting, while C/C++ code should
 follow the [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html). Code should
-add tests *TODO FIGURE OUT HOW*.
+be unittested and tests should be invoked by `setup.py test`.
 
 Most importantly, heapprof is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By
 participating in this product, you agree to abide by its terms. This code also governs behavior on
 the mailing list. We take this very seriously, and will enforce it gleefully.
+
+### Desiderata
+
+Some known future features that we'll probably want:
+
+* Replace the "top N stack traces" feature of HeapHistory with something more informative.
+* Provide additional file formats of output to work with other kinds of visualization, especially
+    graph visualizations similar to those created by pprof.
+* Provide a nicer user flow for analyzing data.
+* Measure and tune system performance.
+* Make the process of picking sampling rates less manual.
