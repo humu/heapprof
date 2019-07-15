@@ -19,6 +19,18 @@ void WriteMetadata(int fd, const struct timespec &start_clock,
 
 PyObject *ReadMetadata(int fd) {
   fprintf(stderr, "Read metadata\n");
+
+  // READ AND DUMP
+  for (int i = 0; i < 50; ++i) {
+    uint8_t x;
+    if (read(fd, &x, 1) == 0) {
+      break;
+    }
+    fprintf(stderr, "%02x ", x);
+  }
+  fprintf(stderr, "\n");
+  lseek(fd, 0, SEEK_SET);
+
   uint32_t version;
   if (!ReadFixed32FromFile(fd, &version)) {
     PyErr_SetString(PyExc_EOFError, "Couldn't read version");

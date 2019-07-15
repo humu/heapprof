@@ -12,6 +12,7 @@ void WriteVarintToFile(int fd, uint64_t value) {
 
 void WriteFixed32ToFile(int fd, uint32_t value) {
   const uint32_t data = absl::ghtonl(value);
+  fprintf(stderr, "WRITE FIXED32: value %08x data %08x\n", value, data);
   write(fd, &data, sizeof(uint32_t));
 }
 
@@ -26,9 +27,7 @@ bool ReadFixed32FromFile(int fd, uint32_t *value) {
     PyErr_SetString(PyExc_EOFError, "");
     return false;
   }
-  fprintf(stderr, "RAW BYTES READ: %08x\n", *value);
   *value = absl::gntohl(*value);
-  fprintf(stderr, "GNTOHL: %08x\n", *value);
   return true;
 }
 
