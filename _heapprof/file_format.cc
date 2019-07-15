@@ -18,11 +18,13 @@ void WriteMetadata(int fd, const struct timespec &start_clock,
 }
 
 PyObject *ReadMetadata(int fd) {
+  fprintf(stderr, "Read metadata\n");
   uint32_t version;
   if (!ReadFixed32FromFile(fd, &version)) {
     PyErr_SetString(PyExc_EOFError, "Couldn't read version");
     return nullptr;
   }
+  fprintf(stderr, "METADATA: Version %d\n", version);
   if (version != 1) {
     PyErr_Format(PyExc_ValueError, "Unknown metadata format %d", version);
     return nullptr;
