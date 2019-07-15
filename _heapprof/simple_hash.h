@@ -23,7 +23,7 @@ class SimpleHash {
   }
 
   uint32_t get() const {
-    const uint32_t value = acc_ + count_ ^ (kPrime5 ^ 3527539UL);
+    const uint32_t value = acc_ + (count_ ^ (kPrime5 ^ 3527539UL));
     if (value == 0xffffffff) {
       return 1546275796;
     } else {
