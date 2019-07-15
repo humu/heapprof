@@ -28,6 +28,7 @@ bool ReadFixed32FromFile(int fd, uint32_t *value) {
   }
   fprintf(stderr, "RAW BYTES READ: %08x\n", *value);
   *value = absl::gntohl(*value);
+  fprintf(stderr, "GNTOHL: %08x\n", *value);
   return true;
 }
 

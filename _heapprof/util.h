@@ -1,7 +1,6 @@
 #ifndef _HEAPPROF_UTIL_H__
 #define _HEAPPROF_UTIL_H__
 
-#include <arpa/inet.h>
 #include <assert.h>
 #include <fcntl.h>
 #include <string.h>
