@@ -26,6 +26,7 @@ bool ReadFixed32FromFile(int fd, uint32_t *value) {
     PyErr_SetString(PyExc_EOFError, "");
     return false;
   }
+  fprintf(stderr, "RAW BYTES READ: %08x\n", *value);
   *value = absl::gntohl(*value);
   return true;
 }
