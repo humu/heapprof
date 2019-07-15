@@ -8,13 +8,11 @@
 #include <time.h>
 #include "Python.h"
 
-#if __clang__
+// C++20 will have a standardized version of this. Until then, we use compiler-specific directives,
+// which are notably missing in MSVC.
+#if __clang__ || __GNUC__
 #define PREDICT_FALSE(expr) __builtin_expect(static_cast<bool>(expr), 0)
 #define PREDICT_TRUE(expr) __builtin_expect(static_cast<bool>(expr), 1)
-#elif __GNUC__
-#include <sys/cdefs.h>
-#define PREDICT_FALSE(expr) __predict_false(expr)
-#define PREDICT_TRUE(expr) __predict_true(expr)
 #else
 #define PREDICT_FALSE(expr) (expr)
 #define PREDICT_TRUE(expr) (expr)
