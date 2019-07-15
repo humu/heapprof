@@ -21,12 +21,25 @@ jobs:
     working_directory: ~/repo
     steps:
       - checkout
+
+      # Install dependencies, with caching.
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "requirements.txt" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
       - run:
         name: install_dependencies
         command: |
           python -m venv venv
           . venv/bin/activate
-          pip3 install --upgrade pip setuptools
+          pip install --upgrade pip setuptools
+          pip install -r requirements.txt
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies-{{ checksum "requirements.txt" }}
+
       - run:
         name: run_tests
         command: |
