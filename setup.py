@@ -1,13 +1,7 @@
 import os
+from distutils.command.build_ext import build_ext as _build_ext  # type: ignore
 
 from setuptools import Extension, find_packages, setup
-
-try:
-    from distutils.command.build_ext import build_ext as _build_ext
-except ImportError:
-    import distutils.command.build_ext
-    raise ImportError(f'In build_ext: {dir(distutils.command.build_ext)}')
-
 
 with open(
     os.path.join(os.path.abspath(os.path.dirname(__file__)), 'README.md'), encoding='utf-8'
