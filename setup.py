@@ -40,8 +40,8 @@ cppmodule = Extension(
         '_heapprof/util.cc',
     ],
     include_dirs=['.', 'build/absl'],
-    library_dirs=['build/absl/absl/base'],
-    libraries=['absl_base'],
+    library_dirs=['build/absl/absl/base', 'build/absl/absl/strings'],
+    libraries=['absl_base', 'absl_strings'],
     define_macros=[('PY_SSIZE_T_CLEAN', None)],
     extra_compile_args=['-std=c++11'],
 )

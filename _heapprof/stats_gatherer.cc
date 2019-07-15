@@ -7,7 +7,7 @@
 #include "absl/strings/str_cat.h"
 #include "_heapprof/util.h"
 
-using absl::strings::StrCat
+using absl::StrCat;
 
 StatsGatherer::StatsGatherer() {}
 
