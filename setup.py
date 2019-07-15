@@ -43,7 +43,7 @@ cppmodule = Extension(
     library_dirs=['build/absl/absl/base', 'build/absl/absl/strings'],
     libraries=['absl_base', 'absl_strings'],
     define_macros=[('PY_SSIZE_T_CLEAN', None)],
-    extra_compile_args=['-std=c++11'],
+    extra_compile_args=['-std=c++11', '-fPIC'],
 )
 
 setup(
