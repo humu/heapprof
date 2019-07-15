@@ -1,4 +1,6 @@
 import os
+import distutils.command.build_ext
+assert dir(distutils.command.build_ext) == {}
 from distutils.command.build_ext import build_ext as _build_ext
 
 from setuptools import Extension, find_packages, setup
