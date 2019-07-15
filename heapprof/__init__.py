@@ -56,8 +56,3 @@ def stop() -> None:
 def isProfiling() -> bool:
     """Test if the heap profiler is currently running."""
     return _heapprof.isProfiling()
-
-
-# Just mess with mypy
-X = 'foobar'
-X = None
