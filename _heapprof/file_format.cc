@@ -43,6 +43,7 @@ PyObject *ReadMetadata(int fd) {
     PyErr_SetString(PyExc_EOFError, "Couldn't read number of sampling ranges");
     return nullptr;
   }
+  fprintf(stderr, "METADATA: Num ranges %lld\n", num_ranges);
   for (uint64_t i = 0; i < num_ranges; ++i) {
     uint64_t maxsize;
     uint32_t scaled_probability;
@@ -57,6 +58,7 @@ PyObject *ReadMetadata(int fd) {
     ScopedObject py_max_size(PyLong_FromLongLong(maxsize));
     ScopedObject py_prob(PyFloat_FromDouble(
         static_cast<double>(scaled_probability) / UINT32_MAX));
+    fprintf(stderr, "METADATA: Read maxsize %lld prob %lld\n", maxsize, scaled_probability);
     if (PyDict_SetItem(sampling_rate.get(), py_max_size.get(), py_prob.get()) ==
         -1) {
       return nullptr;
