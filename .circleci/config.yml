@@ -21,10 +21,20 @@ jobs:
     working_directory: ~/repo
     steps:
       - checkout
-      # Ensure that pip and setuptools are up-to-date
-      - run: pip3 install --upgrade pip setuptools
-      # Build project and run megatest!
-      - run: python setup.py test
+      - run:
+        name: install_dependencies
+        command: |
+          python -m venv venv
+          . venv/bin/activate
+          pip3 install --upgrade pip setuptools
+      - run:
+        name: run_tests
+        command: |
+          . venv/bin/activate
+          python setup.py test
+      - store_artifacts:
+          path: test-reports
+          destination: test-reports
 
 workflows:
   version: 2
