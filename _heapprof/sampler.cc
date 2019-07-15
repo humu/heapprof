@@ -68,10 +68,7 @@ Sampler::Sampler(PyObject *sampling_rate) {
 void Sampler::WriteStateToFile(int fd) const {
   WriteVarintToFile(fd, ranges_.size());
   for (auto it = ranges_.begin(); it != ranges_.end(); ++it) {
-    const uint32_t p = it->probabilityAsUint32();
-    fprintf(stderr, "WRITE STATE: %d %08x\n", it->max_bytes, p);
     WriteFixed64ToFile(fd, it->max_bytes);
-    WriteFixed32ToFile(fd, p);
-    // WriteFixed32ToFile(fd, it->probabilityAsUint32());
+    WriteFixed32ToFile(fd, it->probabilityAsUint32());
   }
 }

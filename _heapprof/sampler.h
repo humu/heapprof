@@ -43,7 +43,9 @@ class Sampler {
         return UINT32_MAX;
       } else {
         const double p = static_cast<double>(probability) / UINT_FAST32_MAX;
-        return static_cast<uint32_t>(p * UINT32_MAX);
+        const uint32_t v = static_cast<uint32_t>(p * UINT32_MAX);
+        fprintf(stderr, "fast size: %zd p %x f %f sc %x\n", sizeof(uint_fast32_t), probability, p, v);
+        return v;
       }
     }
 
