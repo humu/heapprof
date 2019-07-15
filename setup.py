@@ -1,9 +1,30 @@
-from os import path
+import os
+from distutils.command.build_ext import build_ext as _build_ext
 
 from setuptools import Extension, find_packages, setup
 
-with open(path.join(path.abspath(path.dirname(__file__)), 'README.md'), encoding='utf-8') as f:
+with open(
+    os.path.join(os.path.abspath(os.path.dirname(__file__)), 'README.md'), encoding='utf-8'
+) as f:
     long_description = f.read()
+
+
+# Our C++ library depends on ABSL. This insane monkey-patch is the simplest way I can figure out to
+# actually make that dependency happen.
+class BuildExtWithABSL(_build_ext):
+    def run(self) -> None:
+        if not os.path.exists('build/absl'):
+            self.mkpath('build/absl')
+            self.spawn(['git', 'clone', 'https://github.com/abseil/abseil-cpp.git', 'build/absl'])
+
+        pwd = os.getcwd()
+        os.chdir('build/absl')
+        self.spawn(['cmake', '.'])
+        self.spawn(['cmake', '--build', '.', '--target', 'all'])
+        os.chdir(pwd)
+
+        super().run()
+
 
 cppmodule = Extension(
     '_heapprof',
@@ -18,7 +39,9 @@ cppmodule = Extension(
         '_heapprof/stats_gatherer.cc',
         '_heapprof/util.cc',
     ],
-    include_dirs=['.'],
+    include_dirs=['.', 'build/absl'],
+    library_dirs=['build/absl/absl/base'],
+    libraries=['absl_base'],
     define_macros=[('PY_SSIZE_T_CLEAN', None)],
     extra_compile_args=['-std=c++11'],
 )
@@ -44,15 +67,15 @@ setup(
         'Source': 'https://github.com/humu-com/heapprof',
         'Tracker': 'https://github.com/humu-com/heapprof/issues',
     },
-
+    # I suppose I should be glad that distutils has a certain amount of monkey-patching ability
+    # built-in?
+    cmdclass={'build_ext': BuildExtWithABSL},
     # The actual contents
-    ext_modules=[cppmodule],
-    install_requires=[],
-    packages=find_packages(exclude=['tests']),
     # NB: This has API requirements that only run on 3.7 and above. It's probably possible to make a
     # version of this run on 3.4 or above if anyone really wants to.
     python_requires='>=3.7',
-
+    ext_modules=[cppmodule],
+    packages=find_packages(exclude=['tests']),
     # Testing
     test_suite='nose.collector',
     tests_require=['nose', 'mypy'],

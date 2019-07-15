@@ -11,12 +11,12 @@ void WriteVarintToFile(int fd, uint64_t value) {
 }
 
 void WriteFixed32ToFile(int fd, uint32_t value) {
-  const uint32_t data = htonl(value);
+  const uint32_t data = absl::ghtonl(value);
   write(fd, &data, sizeof(uint32_t));
 }
 
 void WriteFixed64ToFile(int fd, uint64_t value) {
-  const uint64_t data = htonll(value);
+  const uint64_t data = absl::ghtonll(value);
   write(fd, &data, sizeof(uint64_t));
 }
 
@@ -26,7 +26,7 @@ bool ReadFixed32FromFile(int fd, uint32_t *value) {
     PyErr_SetString(PyExc_EOFError, "");
     return false;
   }
-  *value = ntohl(*value);
+  *value = absl::gntohl(*value);
   return true;
 }
 
@@ -36,7 +36,7 @@ bool ReadFixed64FromFile(int fd, uint64_t *value) {
     PyErr_SetString(PyExc_EOFError, "");
     return false;
   }
-  *value = ntohll(*value);
+  *value = absl::gntohll(*value);
   return true;
 }
 
