@@ -13,6 +13,7 @@ with open(
 # actually make that dependency happen.
 class BuildExtWithABSL(_build_ext):
     def run(self) -> None:
+        self.spawn(['pip', 'install', '-U', 'cmake'])
         if not os.path.exists('build/absl'):
             self.mkpath('build/absl')
             self.spawn(['git', 'clone', 'https://github.com/abseil/abseil-cpp.git', 'build/absl'])
