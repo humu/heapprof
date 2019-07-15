@@ -18,25 +18,11 @@ void WriteMetadata(int fd, const struct timespec &start_clock,
 }
 
 PyObject *ReadMetadata(int fd) {
-  fprintf(stderr, "Read metadata\n");
-
-  // READ AND DUMP
-  for (int i = 0; i < 50; ++i) {
-    uint8_t x;
-    if (read(fd, &x, 1) == 0) {
-      break;
-    }
-    fprintf(stderr, "%02x ", x);
-  }
-  fprintf(stderr, "\n");
-  lseek(fd, 0, SEEK_SET);
-
   uint32_t version;
   if (!ReadFixed32FromFile(fd, &version)) {
     PyErr_SetString(PyExc_EOFError, "Couldn't read version");
     return nullptr;
   }
-  fprintf(stderr, "METADATA: Version %d\n", version);
   if (version != 1) {
     PyErr_Format(PyExc_ValueError, "Unknown metadata format %d", version);
     return nullptr;
@@ -57,7 +43,6 @@ PyObject *ReadMetadata(int fd) {
     PyErr_SetString(PyExc_EOFError, "Couldn't read number of sampling ranges");
     return nullptr;
   }
-  fprintf(stderr, "METADATA: Num ranges %lld\n", num_ranges);
   for (uint64_t i = 0; i < num_ranges; ++i) {
     uint64_t maxsize;
     uint32_t scaled_probability;
@@ -72,7 +57,6 @@ PyObject *ReadMetadata(int fd) {
     ScopedObject py_max_size(PyLong_FromLongLong(maxsize));
     ScopedObject py_prob(PyFloat_FromDouble(
         static_cast<double>(scaled_probability) / UINT32_MAX));
-    fprintf(stderr, "METADATA: Read maxsize %lld prob %lld\n", maxsize, scaled_probability);
     if (PyDict_SetItem(sampling_rate.get(), py_max_size.get(), py_prob.get()) ==
         -1) {
       return nullptr;

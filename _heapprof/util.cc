@@ -12,7 +12,6 @@ void WriteVarintToFile(int fd, uint64_t value) {
 
 void WriteFixed32ToFile(int fd, uint32_t value) {
   const uint32_t data = absl::ghtonl(value);
-  fprintf(stderr, "WRITE FIXED32: value %08x data %08x\n", value, data);
   write(fd, &data, sizeof(uint32_t));
 }
 

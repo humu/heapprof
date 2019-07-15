@@ -11,7 +11,6 @@ Sampler::Range::Range(Py_ssize_t m, double p) : max_bytes(m) {
   } else {
     probability = static_cast<uint_fast32_t>(p * UINT_FAST32_MAX);
   }
-  fprintf(stderr, "Init probability: %f -> %x\n", p, probability);
 }
 
 Sampler::Sampler(PyObject *sampling_rate) {

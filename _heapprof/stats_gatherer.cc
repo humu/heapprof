@@ -4,7 +4,10 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include "absl/strings/str_cat.h"
 #include "_heapprof/util.h"
+
+using absl::strings::StrCat
 
 StatsGatherer::StatsGatherer() {}
 
@@ -25,7 +28,7 @@ StatsGatherer::~StatsGatherer() {
   for (auto it = bins_.begin(); it != bins_.end(); ++it) {
     const int new_size = 1 << it->first;
     StatsString summary{
-        std::to_string(prev_size + 1) + " - " + std::to_string(new_size),
+        StrCat(prev_size + 1, " - ", new_size),
         std::to_string(it->second.num_allocs),
         std::to_string(it->second.total_bytes)};
     size_len = std::max<int>(size_len, summary.size.size());
