@@ -1,5 +1,3 @@
-#define PY_SSIZE_T_CLEAN
-
 #include "_heapprof/profiler.h"
 #include <arpa/inet.h>
 #include <fcntl.h>

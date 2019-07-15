@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include "_heapprof/malloc_patch.h"
 #include <memory>
 #include "Python.h"

@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include <memory>
 #include "Python.h"
 #include "_heapprof/file_format.h"

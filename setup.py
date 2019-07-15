@@ -19,6 +19,7 @@ cppmodule = Extension(
         '_heapprof/util.cc',
     ],
     include_dirs=['.'],
+    define_macros=[('PY_SSIZE_T_CLEAN', None)],
     extra_compile_args=['-std=c++11'],
 )
 
