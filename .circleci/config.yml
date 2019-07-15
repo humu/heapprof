@@ -33,8 +33,7 @@ jobs:
           command: |
             python -m venv venv
             . venv/bin/activate
-            pip install --upgrade pip setuptools
-            pip install -r requirements.txt
+            pip install --upgrade pip setuptools cmake
       - save_cache:
           paths:
             - ./venv
@@ -67,7 +66,7 @@ jobs:
           command: |
             python -m venv venv
             . venv/bin/activate
-            pip install --upgrade pip mypy
+            pip install --upgrade pip setuptools mypy
             pip install -r requirements.txt
       - save_cache:
           paths:
