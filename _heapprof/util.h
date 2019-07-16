@@ -1,31 +1,35 @@
 #ifndef _HEAPPROF_UTIL_H__
 #define _HEAPPROF_UTIL_H__
 
-#include <arpa/inet.h>
 #include <assert.h>
 #include <fcntl.h>
 #include <string.h>
 #include <time.h>
 #include "Python.h"
 
-#if __clang__
+// A note here: We need to achieve some portable operations which aren't yet available in the C++
+// standard, but the portable logic for them is depressingly long. So we include ABSL, which has
+// extremely nice implementations of them. However, these are in the base/internal directory,
+// because the ABSL team hasn't decided to make them formally part of the spec yet. At some point,
+// these are definitely going to be moved out of internal, just Not Quite Yet.
+// (Signed, the original author of endian.h and quite a bit of the other stuff in this directory;
+// sigh. -- zunger@)
+#include "absl/base/internal/bits.h"
+#include "absl/base/internal/endian.h"
+
+// C++20 will have a standardized version of this. Until then, we use compiler-specific directives,
+// which are notably missing in MSVC.
+#if __clang__ || __GNUC__
 #define PREDICT_FALSE(expr) __builtin_expect(static_cast<bool>(expr), 0)
 #define PREDICT_TRUE(expr) __builtin_expect(static_cast<bool>(expr), 1)
-#elif __GNUC__
-#include <sys/cdefs.h>
-#define PREDICT_FALSE(expr) __predict_false(expr)
-#define PREDICT_TRUE(expr) __predict_true(expr)
 #else
 #define PREDICT_FALSE(expr) (expr)
 #define PREDICT_TRUE(expr) (expr)
 #endif
 
-static inline int Log2RoundUp(uint64_t x) {
-  // This special case is required because __builtin_clzll doesn't have defined
-  // behavior for argument zero; NB that it does the right thing on any chip
-  // that has the modern BSR instruction, but not necessarily on older impls
-  // before this. "CLZ" stands for "count leading zeroes," btw.
-  return x <= 1 ? 0 : 64 - __builtin_clzll(x - 1);
+// Return ceil(log2(x)).
+inline int Log2RoundUp(uint64_t x) {
+  return x ? 64 - absl::base_internal::CountLeadingZeros64(x - 1) : 0;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -78,9 +82,9 @@ inline uint8_t *UnsafeAppendVarint(uint8_t *buffer, int value) {
 // beyond where the write happened. No bounds checking is performed.
 inline uint8_t *UnsafeAppendFixed32(uint8_t *buffer, uint32_t value) {
   if (PREDICT_TRUE(UINT32_ALIGNED(buffer))) {
-    *reinterpret_cast<uint32_t *>(buffer) = htonl(value);
+    *reinterpret_cast<uint32_t *>(buffer) = absl::ghtonl(value);
   } else {
-    const uint32_t norm = htonl(value);
+    const uint32_t norm = absl::ghtonl(value);
     memcpy(buffer, &norm, sizeof(uint32_t));
   }
   return buffer + sizeof(uint32_t);

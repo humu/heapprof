@@ -1,7 +1,6 @@
 #ifndef _HEAPPROF_REENTRANT_SCOPE_H__
 #define _HEAPPROF_REENTRANT_SCOPE_H__
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pythread.h"
 

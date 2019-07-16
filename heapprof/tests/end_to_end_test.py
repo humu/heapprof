@@ -6,6 +6,13 @@ import heapprof
 
 
 class EndToEndTest(unittest.TestCase):
+    def testGatherStats(self) -> None:
+        # Basically a smoke test -- make sure it runs.
+        heapprof.gatherStats()
+        self.assertTrue(heapprof.isProfiling())
+        list(range(10000))
+        heapprof.stop()
+
     def testHeapProfiler(self) -> None:
         with TemporaryDirectory() as path:
             self.assertFalse(heapprof.isProfiling())

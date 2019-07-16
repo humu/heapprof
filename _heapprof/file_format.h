@@ -16,7 +16,7 @@ void WriteMetadata(int fd, const struct timespec &start_clock,
                    const Sampler &sampler);
 
 // Read the metadata header from an .hpm file. This will either return a tuple
-// (float initial_clock, Dict[int, float] sample_rate), or return nullptr and
+// (double initial_clock, Dict[int, double] sample_rate), or return nullptr and
 // set the exception.
 PyObject *ReadMetadata(int fd);
 
@@ -28,9 +28,9 @@ void WriteEvent(int fd, struct timespec *last_clock,
                 size_t size, bool alloc);
 
 // Read a single heap event from the given file descriptor, given a value for
-// the timestamp of the previous event. Returns either a tuple (float timestamp,
+// the timestamp of the previous event. Returns either a tuple (double delta-time,
 // int traceindex, int size), or nullptr + raises an EOFError.
-PyObject *ReadEvent(int fd, float last_time);
+PyObject *ReadEvent(int fd);
 
 // Write the current Python stack trace as a raw trace to the indicated file
 // descriptor. Returns false if there is no such trace!
