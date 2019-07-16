@@ -81,7 +81,12 @@ inline uint8_t *UnsafeAppendVarint(uint8_t *buffer, int value) {
 // Append value, in network byte order, to the buffer, and return a pointer
 // beyond where the write happened. No bounds checking is performed.
 inline uint8_t *UnsafeAppendFixed32(uint8_t *buffer, uint32_t value) {
-  absl::big_endian::Store32(buffer, value);
+  if (PREDICT_TRUE(UINT32_ALIGNED(buffer))) {
+    *reinterpret_cast<uint32_t *>(buffer) = htonl(value);
+  } else {
+    const uint32_t norm = htonl(value);
+    memcpy(buffer, &norm, sizeof(uint32_t));
+  }
   return buffer + sizeof(uint32_t);
 }
 
