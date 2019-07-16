@@ -117,7 +117,7 @@ void WriteEvent(int fd, struct timespec *last_clock,
   write(fd, g_event_buffer, end - g_event_buffer);
 }
 
-PyObject *ReadEvent(int fd, float last_time) {
+PyObject *ReadEvent(int fd) {
   uint32_t indexword;
   uint64_t delta_seconds;
   uint64_t delta_usec;
@@ -129,15 +129,16 @@ PyObject *ReadEvent(int fd, float last_time) {
     return nullptr;
   }
 
+  double delta_time = delta_seconds + (1e-6 * delta_usec);
+
   if (indexword & kDeltaIsNegative) {
-    delta_seconds = -delta_seconds;
+    delta_time = -delta_time;
   }
   if (indexword & kOperationIsFree) {
     size = -size;
   }
 
-  return Py_BuildValue("fii", last_time + delta_seconds + (1e-6 * delta_usec),
-                       indexword & ~kHighBits, size);
+  return Py_BuildValue("fii", delta_time, indexword & ~kHighBits, size);
 }
 
 bool SkipFrame(PyFrameObject *pyframe) {

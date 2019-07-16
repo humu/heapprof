@@ -83,12 +83,13 @@ class HeapProfile(object):
             lastTime = self._initialTime
             while True:
                 try:
-                    eventTime, traceindex, size = _heapprof.readEvent(datafile.fileno(), lastTime)
+                    deltaTime, traceindex, size = _heapprof.readEvent(datafile.fileno())
                 except EOFError:
                     break
                 else:
-                    lastTime = eventTime
-                    yield HeapEvent(eventTime, traceindex, size, self.scaleFactor(size))
+                    newTime = lastTime + deltaTime
+                    yield HeapEvent(newTime, traceindex, size, self.scaleFactor(size))
+                    lastTime = newTime
 
     def trace(self, traceindex: int) -> Optional[HeapTrace]:
         """Given a traceindex (of the sort found in a HeapEvent), find the corresponding stack

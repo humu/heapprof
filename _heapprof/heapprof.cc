@@ -41,10 +41,9 @@
 //    Returns True iff profiling is currently running.
 //    Implemented in HeapProfIsProfiling().
 //
-// _heapprof.readEvent(fd: int, lastTime: float) -> Optional[Tuple[float, int,
-// int]]
+// _heapprof.readEvent(fd: int) -> Optional[Tuple[float, int, int]]
 //    Try to read a single event from an .hpd file open at the given file
-//    descriptor. Either returns a tuple (timestamp, traceindex, signed size) or
+//    descriptor. Either returns a tuple (delta-t, traceindex, signed size) or
 //    None to mark EOF.
 //
 // _heapprof.readRawTrace(fd: int) -> List[Tuple[str, int]]
@@ -111,11 +110,10 @@ static PyObject *HeapProfIsProfiling(PyObject *self, PyObject *args) {
 // int]]
 static PyObject *HeapProfReadEvent(PyObject *self, PyObject *args) {
   int fd;
-  float last_time;
-  if (!PyArg_ParseTuple(args, "if", &fd, &last_time)) {
+  if (!PyArg_ParseTuple(args, "i", &fd)) {
     return nullptr;
   }
-  return ReadEvent(fd, last_time);
+  return ReadEvent(fd);
 }
 
 // _heapprof.readRawTrace(fd: int) -> List[Tuple[str, int]]

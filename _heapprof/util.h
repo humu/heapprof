@@ -84,7 +84,7 @@ inline uint8_t *UnsafeAppendFixed32(uint8_t *buffer, uint32_t value) {
   if (PREDICT_TRUE(UINT32_ALIGNED(buffer))) {
     *reinterpret_cast<uint32_t *>(buffer) = absl::ghtonl(value);
   } else {
-    const uint32_t norm = absl::gtonl(value);
+    const uint32_t norm = absl::ghtonl(value);
     memcpy(buffer, &norm, sizeof(uint32_t));
   }
   return buffer + sizeof(uint32_t);
