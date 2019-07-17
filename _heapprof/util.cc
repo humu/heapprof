@@ -112,9 +112,9 @@ static inline int ScopedFileMode(bool write) {
 }
 
 ScopedFile::ScopedFile(const char *filebase, const char *suffix, bool write)
-  : filename_(std::string(filebase) + suffix),
-    fd_(open(filename_.c_str(), ScopedFileMode(write), 0600)),
-    delete_(false) {
+    : filename_(std::string(filebase) + suffix),
+      fd_(open(filename_.c_str(), ScopedFileMode(write), 0600)),
+      delete_(false) {
   if (fd_ == -1) {
     PyErr_SetFromErrnoWithFilenameObject(
         PyExc_OSError,

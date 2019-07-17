@@ -1,5 +1,2 @@
-* Fix mystery segfaults
-* cmake only build absl: base
-* Verify that digesting works
 * Replace top-level API completely and change tests
 * Update docs

@@ -1,6 +1,8 @@
-#include <map>
-#include <vector>
 #include "_heapprof/file_format.h"
+#include <algorithm>
+#include <map>
+#include <utility>
+#include <vector>
 #include "_heapprof/scoped_object.h"
 #include "_heapprof/util.h"
 
@@ -29,9 +31,7 @@ struct RawMetadata {
   uint64_t start_nsec;
   std::map<uint64_t, double> sampling_probability;
 
-  inline double start_time() const {
-    return start_sec + 1e-9 * start_nsec;
-  }
+  inline double start_time() const { return start_sec + 1e-9 * start_nsec; }
 };
 
 // Read the metadata from a .hpm file in C++ form; return false and set the
@@ -62,10 +62,12 @@ static bool ReadRawMetadata(int fd, RawMetadata *md) {
     uint32_t scaled_probability;
     if (!ReadFixed64FromFile(fd, &maxsize) ||
         !ReadFixed32FromFile(fd, &scaled_probability)) {
-      PyErr_Format(PyExc_EOFError, "Couldn't read data for sampling range %d", i);
+      PyErr_Format(PyExc_EOFError, "Couldn't read data for sampling range %d",
+                   i);
       return false;
     }
-    md->sampling_probability[maxsize] = static_cast<double>(scaled_probability) / UINT32_MAX;
+    md->sampling_probability[maxsize] =
+        static_cast<double>(scaled_probability) / UINT32_MAX;
   }
   return true;
 }
@@ -137,7 +139,9 @@ PyObject *ReadRawTrace(int fd) {
   uint64_t lineno;
   while (1) {
     if (!ReadVarintFromFile(fd, &lineno)) {
-      PyErr_SetString(PyExc_EOFError, "Unexpected EOF when expecting line number in stack trace");
+      PyErr_SetString(
+          PyExc_EOFError,
+          "Unexpected EOF when expecting line number in stack trace");
       return nullptr;
     }
 
@@ -149,19 +153,22 @@ PyObject *ReadRawTrace(int fd) {
     lineno -= 1;
     PyObject *filename = ReadStringFromFile(fd);
     if (!filename) {
-      PyErr_SetString(PyExc_EOFError, "Unexpected EOF when reading filename from stack trace");
+      PyErr_SetString(PyExc_EOFError,
+                      "Unexpected EOF when reading filename from stack trace");
       return nullptr;
     }
 
     ScopedObject tuple(Py_BuildValue("Ni", filename, lineno));
     if (!tuple) {
-      PyErr_SetString(PyExc_RuntimeError, "Failed to build result tuple for raw stack trace");
+      PyErr_SetString(PyExc_RuntimeError,
+                      "Failed to build result tuple for raw stack trace");
       return nullptr;
     }
     // NB: PyList_Append grabs its own reference to the tuple, so we don't
     // release it; we indeed decrement its refcount at the end of this scope.
     if (PyList_Append(list.get(), tuple.get()) == -1) {
-      PyErr_SetString(PyExc_RuntimeError, "Failed to append result tuple to list");
+      PyErr_SetString(PyExc_RuntimeError,
+                      "Failed to append result tuple to list");
       return nullptr;
     }
   }
@@ -240,13 +247,9 @@ struct RawEvent {
     return is_free() ? -result : result;
   }
 
-  inline bool is_free() const {
-    return indexword & kOperationIsFree;
-  }
+  inline bool is_free() const { return indexword & kOperationIsFree; }
 
-  inline uint32_t traceindex() const {
-    return indexword & ~kHighBits;
-  }
+  inline uint32_t traceindex() const { return indexword & ~kHighBits; }
 };
 
 // Read a single event and return it in C++ format. Returns false and sets
@@ -265,11 +268,8 @@ PyObject *ReadEvent(int fd) {
     return nullptr;
   }
 
-  return Py_BuildValue(
-      "fii",
-      raw_event.delta_time(),
-      raw_event.traceindex(),
-      raw_event.byte_size());
+  return Py_BuildValue("fii", raw_event.delta_time(), raw_event.traceindex(),
+                       raw_event.byte_size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -292,18 +292,20 @@ PyObject *ReadEvent(int fd) {
 // Followed by the index:
 //   fixed32: index magic
 //   varint: number of entries
-//   varints: relative offset of entry N from entry N-1 or (for N=0) start of file.
+//   varints: relative offset of entry N from entry N-1 or (for N=0) start of
+//   file.
 
 static const uint32_t kSnapshotMagic = 0x5379a0bd;
 static const uint32_t kIndexMagic = 0xab935776;
 
 struct HPMMetadata {
   double initial_time;
-  // The int is the same as in a sampler; the float is the multiplicative factor.
+  // The int is the same as in a sampler; the float is the multiplicative
+  // factor.
   std::map<uint64_t, float> scaling_factor;
 
-  // Convert a raw size (unsigned, from a single event) to a scaled size (accounting for sampling).
-  // We deliberately round this to an integer.
+  // Convert a raw size (unsigned, from a single event) to a scaled size
+  // (accounting for sampling). We deliberately round this to an integer.
   inline int scaled_size(uint64_t raw_size) const {
     auto l_it = scaling_factor.upper_bound(raw_size);
     if (l_it == scaling_factor.end()) {
@@ -314,8 +316,8 @@ struct HPMMetadata {
   }
 };
 
-// Read the metadata from a .hpm file and return it in C++ format. On error, returns
-// false and sets the exception.
+// Read the metadata from a .hpm file and return it in C++ format. On error,
+// returns false and sets the exception.
 static bool GetHPMMetadata(const char *filebase, HPMMetadata *result) {
   ScopedFile hpm(filebase, ".hpm", false);
   if (!hpm) {
@@ -335,30 +337,57 @@ static bool GetHPMMetadata(const char *filebase, HPMMetadata *result) {
   return true;
 }
 
-static void WriteDigestEntry(int fd, const std::map<uint32_t, int> live_bytes) {
-  WriteFixed32ToFile(fd, kSnapshotMagic);
+// Sort function to put traces in descending order by size.
+static bool SortPairs(const std::pair<uint32_t, int> &a,
+                      const std::pair<uint32_t, int> &b) {
+  return a.second > b.second;
+}
+
+static void WriteDigestEntry(int fd, const std::map<uint32_t, int> live_bytes,
+                             double precision) {
   // Build up a map sorted in descending order by byte size.
   std::vector<std::pair<uint32_t, int> > sorted_bytes;
   sorted_bytes.reserve(live_bytes.size());
+  int64_t total_size = 0;
   for (auto p : live_bytes) {
     sorted_bytes.push_back(p);
+    total_size += p.second;
   }
-  std::sort(
-      sorted_bytes.begin(),
-      sorted_bytes.end(),
-      [](std::pair<uint32_t, int> a, std::pair<uint32_t, int> b) {
-        return a.second > b.second;
-      });
+  std::sort(sorted_bytes.begin(), sorted_bytes.end(), SortPairs);
 
+  // If a finite precision was set, we're going to drop a bunch of stack traces
+  // from the end, and instead aggregate their totals into a single "other"
+  // category which is written with trace index zero. (Zero is the reserved "no
+  // trace" index, so this makes good sense)
+  if (precision > 0) {
+    const int64_t slop_amount = static_cast<int64_t>(total_size * precision);
+    int64_t other_bytes = 0;  // Bytes in the "OTHER" category.
+    size_t last_index = sorted_bytes.size();
+    for (; last_index >= 0 && other_bytes < slop_amount; --last_index) {
+      other_bytes += sorted_bytes[last_index].second;
+    }
+    sorted_bytes.resize(last_index);
+
+    if (other_bytes > 0) {
+      const auto pair = std::make_pair(0, other_bytes);
+      auto position = std::lower_bound(sorted_bytes.begin(), sorted_bytes.end(),
+                                       pair, SortPairs);
+      sorted_bytes.insert(position, pair);
+    }
+  }
+
+  WriteFixed32ToFile(fd, kSnapshotMagic);
   WriteVarintToFile(fd, sorted_bytes.size());
-  if (sorted_bytes.empty()) return;
+  if (!sorted_bytes.empty()) {
+    WriteVarintToFile(fd, sorted_bytes[0].first);
+    WriteVarintToFile(fd, sorted_bytes[0].second);
 
-  WriteVarintToFile(fd, sorted_bytes[0].first);
-  WriteVarintToFile(fd, sorted_bytes[0].second);
-
-  for (size_t i = 1; i < sorted_bytes.size(); ++i) {
-    WriteVarintToFile(fd, sorted_bytes[i].first);
-    WriteVarintToFile(fd, sorted_bytes[i].second - sorted_bytes[i].first);
+    for (size_t i = 1; i < sorted_bytes.size(); ++i) {
+      WriteVarintToFile(fd, sorted_bytes[i].first);
+      // These are sorted in descending order, so we just write the differences.
+      WriteVarintToFile(fd,
+                        sorted_bytes[i - 1].second - sorted_bytes[i].second);
+    }
   }
 }
 
@@ -382,10 +411,11 @@ static void BytesToStderr(double bytes) {
   }
 }
 
-// TODO(zunger): This function is still way too slow; on my laptop it can digest about 50sec/sec.
-// Some clever batch-reading and buffering of data, and maybe a smarter varint decoder, could
-// probably speed this up by a *lot*.
-bool MakeDigestFile(const char *filebase, int interval_msec, bool verbose) {
+// TODO(zunger): This function is still way too slow; on my laptop it can digest
+// about 50sec/sec. Some clever batch-reading and buffering of data, and maybe a
+// smarter varint decoder, could probably speed this up by a *lot*.
+bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
+                    bool verbose) {
   HPMMetadata hpm;
   if (!GetHPMMetadata(filebase, &hpm)) {
     return false;
@@ -402,7 +432,8 @@ bool MakeDigestFile(const char *filebase, int interval_msec, bool verbose) {
   WriteFixed32ToFile(hpc, 1);
   const uint64_t seconds = static_cast<uint64_t>(hpm.initial_time);
   WriteFixed64ToFile(hpc, seconds);
-  WriteFixed64ToFile(hpc, static_cast<uint64_t>(1e9 * (hpm.initial_time - seconds)));
+  WriteFixed64ToFile(hpc,
+                     static_cast<uint64_t>(1e9 * (hpm.initial_time - seconds)));
   WriteVarintToFile(hpc, interval_msec);
   // This is where we're going to come back later and write the index location.
   const off_t index_offset_location = lseek(hpc, 0, SEEK_CUR);
@@ -425,13 +456,16 @@ bool MakeDigestFile(const char *filebase, int interval_msec, bool verbose) {
     clock_gettime(CLOCK_REALTIME, &start_time);
     total_bytes = lseek(hpd, 0, SEEK_END);
     lseek(hpd, 0, SEEK_SET);
-    fprintf(stderr, "Digesting %s: %0.1fMB\n", filebase, total_bytes / 1048576.);
+    fprintf(stderr, "Digesting %s: ", filebase);
+    BytesToStderr(total_bytes);
+    fprintf(stderr, "\n");
   }
 
   while (ReadRawEvent(hpd, &event)) {
-    // This is long-running, so check the signal handler.
+    // This is long-running, so check the signal handler. On interrupt, though,
+    // we break, not fail: we'll dump out what we have so far.
     if (PyErr_CheckSignals() == -1) {
-      return false;
+      break;
     }
 
     // Fetch the event data
@@ -456,7 +490,7 @@ bool MakeDigestFile(const char *filebase, int interval_msec, bool verbose) {
     }
     for (; relative_time >= next_snapshot; next_snapshot += interval) {
       snapshot_starts.push_back(lseek(hpc, 0, SEEK_CUR));
-      WriteDigestEntry(hpc, live_bytes);
+      WriteDigestEntry(hpc, live_bytes, precision);
       ++snapshots_written;
     }
 
@@ -472,25 +506,32 @@ bool MakeDigestFile(const char *filebase, int interval_msec, bool verbose) {
       const double fraction = static_cast<double>(bytes) / total_bytes;
       const double eta = time_used * ((1.0 / fraction) - 1);
 
-      // For those wanting to understand exactly what's being printed here: the rate is given both
-      // in MBps (of data being read) and sec/sec, i.e. seconds of profiling time per second of
-      // digestion time.
+      // For those wanting to understand exactly what's being printed here: the
+      // rate is given both in MBps (of data being read) and sec/sec, i.e.
+      // seconds of profiling time per second of digestion time.
       fprintf(stderr, "Digested ");
       TimeToStderr(relative_time);
       fprintf(stderr, " of data (%0.1fM events, ", 1e-6 * events_read);
       BytesToStderr(bytes);
       fprintf(stderr, ") @ ");
       BytesToStderr(bytes / time_used);
-      fprintf(stderr, "ps=%0.1fsec/sec; %0.1f%%; ETA ", relative_time / time_used, 100 * fraction);
+      fprintf(stderr, "ps=%0.1fsec/sec; %0.1f%%; ETA ",
+              relative_time / time_used, 100 * fraction);
       TimeToStderr(eta);
       fprintf(stderr, ")\n");
     }
   }
 
-  // ReadRawEvent set an exception; ignore it.
-  PyErr_Clear();
+  // ReadRawEvent set an exception; ignore it. Other exceptions are legit.
+  if (PyErr_ExceptionMatches(PyExc_EOFError) ||
+      PyErr_ExceptionMatches(PyExc_ValueError)) {
+    PyErr_Clear();
+  }
 
   // Finally, write the index.
+  if (verbose) {
+    fprintf(stderr, "Writing index with %zd entries\n", snapshot_starts.size());
+  }
   uint64_t index_offset = static_cast<uint64_t>(lseek(hpc, 0, SEEK_CUR));
   index_offset = absl::ghtonll(index_offset);
   pwrite(hpc, &index_offset, sizeof(index_offset), index_offset_location);
@@ -505,7 +546,7 @@ bool MakeDigestFile(const char *filebase, int interval_msec, bool verbose) {
   }
 
   hpc.set_delete_on_exit(false);
-  return true;
+  return !PyErr_Occurred();
 }
 
 PyObject *ReadDigestMetadata(int fd) {
@@ -527,7 +568,8 @@ PyObject *ReadDigestMetadata(int fd) {
   }
 
   if (lseek(fd, index_offset, SEEK_SET) != static_cast<off_t>(index_offset)) {
-    PyErr_Format(PyExc_ValueError, "Invalid index offset %llu in metadata", index_offset);
+    PyErr_Format(PyExc_ValueError, "Invalid index offset %llu in metadata",
+                 index_offset);
     return nullptr;
   }
   uint32_t magic;
@@ -566,7 +608,8 @@ PyObject *ReadDigestEntry(int fd, Py_ssize_t offset) {
 
   uint32_t magic;
   if (!ReadFixed32FromFile(fd, &magic) || magic != kSnapshotMagic) {
-    PyErr_Format(PyExc_ValueError, "Invalid magic number for entry at %d", offset);
+    PyErr_Format(PyExc_ValueError, "Invalid magic number for entry at %d",
+                 offset);
     return nullptr;
   }
 
@@ -580,11 +623,12 @@ PyObject *ReadDigestEntry(int fd, Py_ssize_t offset) {
     return nullptr;
   }
 
-  long long size = 0;
+  int64_t size = 0;
   for (uint64_t i = 0; i < num_items; ++i) {
     uint64_t traceindex;
     uint64_t delta_size;
-    if (!ReadVarintFromFile(fd, &traceindex) || !ReadVarintFromFile(fd, &delta_size)) {
+    if (!ReadVarintFromFile(fd, &traceindex) ||
+        !ReadVarintFromFile(fd, &delta_size)) {
       return nullptr;
     }
 
@@ -596,8 +640,9 @@ PyObject *ReadDigestEntry(int fd, Py_ssize_t offset) {
 
     ScopedObject py_traceindex(PyLong_FromLongLong(traceindex));
     ScopedObject py_size(PyLong_FromLongLong(size));
-    if (!py_traceindex || !py_size || 
-        PyDict_SetItem(result.get(), py_traceindex.get(), py_size.get()) == -1) {
+    if (!py_traceindex || !py_size ||
+        PyDict_SetItem(result.get(), py_traceindex.get(), py_size.get()) ==
+            -1) {
       return nullptr;
     }
   }

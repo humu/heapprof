@@ -1,5 +1,5 @@
 import linecache
-from typing import Dict, Iterator, List, NamedTuple, Optional, Tuple
+from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple
 
 import _heapprof
 
@@ -23,19 +23,21 @@ class HPM(object):
     HeapTrace = List[TraceLine]
 
     def __init__(self, filebase: str) -> None:
-        self._mdfile = open(filebase + '.hpm', 'rb')
+        self._mdfile = open(filebase + ".hpm", "rb")
 
         # The raw stack traces that we've loaded so far. traceindices are 1-based indices into this
         # array.
         self._rawTraces: List[List[Tuple[str, int]]] = []
         # The "clean" stack traces, including contents. We generate these separately because pulling
         # out the lines of code is expensive, so we only do it if someone asks for a given trace.
-        self._traces: Dict[int, self.HeapTrace] = {}
+        self._traces: Dict[int, HPM.HeapTrace] = {}
         # True if we've read to the end of self._mdfile
         self._allTracesRead = False
 
         # Read the metadata and compute our scale factors.
-        self._initialTime, self._samplingRate = _heapprof.readMetadata(self._mdfile.fileno())
+        self._initialTime, self._samplingRate = _heapprof.readMetadata(
+            self._mdfile.fileno()
+        )
         self._scaleFactors = sorted(
             [
                 (maxSize, 1 / probability if probability != 0 else 0)
@@ -57,7 +59,7 @@ class HPM(object):
         """
         return self._samplingRate
 
-    def trace(self, traceindex: int) -> Optional['HPM.HeapTrace']:
+    def trace(self, traceindex: int) -> Optional["HPM.HeapTrace"]:
         """Given a traceindex (of the sort found in a HeapEvent), find the corresponding stack
         trace. Returns None if there is no known trace for this traceindex.
         """
@@ -95,9 +97,10 @@ class HPM(object):
     # Implementation details beyond this point.
 
     def __del__(self) -> None:
-        self._mdfile.close()
+        if hasattr(self, "_mdfile"):
+            self._mdfile.close()
 
-    def _makeHeapTrace(self, rawTrace: List[Tuple[str, int]]) -> 'HPM.HeapTrace':
+    def _makeHeapTrace(self, rawTrace: List[Tuple[str, int]]) -> "HPM.HeapTrace":
         return [
             self.TraceLine(
                 filename=line[0],
@@ -130,16 +133,16 @@ class HPD(object):
 
     def __init__(self, filebase: str, hpm: Optional[HPM] = None) -> None:
         self.hpm = hpm or HPM(filebase)
-        self._dataFileName = filebase + '.hpd'
+        self._dataFileName = filebase + ".hpd"
 
-    def __iter__(self) -> Iterator['HPD.Event']:
+    def __iter__(self) -> Iterator["HPD.Event"]:
         """Yield a sequence of heap events. Each event contains a timestamp, a stack trace index,
         and a number of bytes, which is positive for allocs and negative for frees. Note that these
         events are subject to sampling; that is, if the number of bytes is in a sampling range that
         has probability 0.1, there is a 0.1 probability that it shows up in these events; no attempt
         has been made here at "inverse scaling" that.
         """
-        with open(self._dataFileName, 'rb') as datafile:
+        with open(self._dataFileName, "rb") as datafile:
             lastTime = self.hpm.initialTime
             while True:
                 try:
@@ -148,11 +151,13 @@ class HPD(object):
                     break
                 else:
                     newTime = lastTime + deltaTime
-                    yield self.Event(newTime, traceindex, size, self.hpm.scaleFactor(size))
+                    yield self.Event(
+                        newTime, traceindex, size, self.hpm.scaleFactor(size)
+                    )
                     lastTime = newTime
 
 
-class HPC(object):
+class HPC(Sequence["HPC.Snapshot"]):
     """HPC is the low-level interface to .hpc files."""
 
     class Snapshot(NamedTuple):
@@ -168,32 +173,44 @@ class HPC(object):
 
     def __init__(self, filebase: str, hpm: Optional[HPM] = None) -> None:
         self.hpm = hpm or HPM(filebase)
-        self._file = open(filebase + '.hpc', 'rb')
+        self._file = open(filebase + ".hpc", "rb")
         self.initialTime, self.timeInterval, self.offsets = _heapprof.readDigestMetadata(
             self._file.fileno()
         )
 
     def __del__(self) -> None:
-        if hasattr(self, '_file'):
+        if hasattr(self, "_file"):
             self._file.close()
 
     def __len__(self) -> int:
         return len(self.offsets)
 
-    def __getitem__(self, key: int) -> 'HPC.Snapshot':
+    def __getitem__(self, key: Any) -> Any:
+        if not isinstance(key, int):
+            raise NotImplementedError("HPC does not support slicing")
         return self.Snapshot(
             relativeTime=key * self.timeInterval,
             usage=_heapprof.readDigestEntry(self._file.fileno(), self.offsets[key]),
         )
 
-    def __iter__(self) -> Iterator['HPC.Snapshot']:
+    def __iter__(self) -> Iterator["HPC.Snapshot"]:
         for i in range(len(self.offsets)):
             yield self[i]
 
-    def __contains__(self, key: int) -> bool:
+    def __contains__(self, key: object) -> bool:
         return key in self.offsets
 
     @classmethod
-    def make(cls, filebase: str, timeInterval: float, verbose: bool = True) -> None:
-        """Build a .hpc file out of a .hpm and .hpd file."""
-        _heapprof.makeDigestFile(filebase, int(timeInterval * 1000), verbose)
+    def make(
+        cls, filebase: str, timeInterval: float, precision: float, verbose: bool
+    ) -> None:
+        """Build a .hpc file out of a .hpm and .hpd file.
+
+        Args:
+            filebase: The name of the hpx file to process.
+            timeInterval: The gap between consecutive snapshots, in seconds.
+            precision: The fraction of total bytes at any snapshot which can be stuffed into the
+                "other" bin. Must be a number in [0, 1).
+            verbose: If set, prints out a lot of state to stderr.
+        """
+        _heapprof.makeDigestFile(filebase, int(timeInterval * 1000), precision, verbose)

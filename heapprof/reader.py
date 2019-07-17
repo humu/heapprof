@@ -15,12 +15,30 @@ class Reader(object):
         self.hpc: Optional[HPC] = None
         self._openHPC()
 
-    def makeDigest(self, timeInterval: float, verbose: bool = False) -> None:
+    def makeDigest(
+        self, timeInterval: float = 60, precision: float = 0.01, verbose: bool = False
+    ) -> None:
         """Parse the .hpm and .hpd files to form a digest. You need to do this before most of the
         methods will work.
+
+        Args:
+            timeInterval: The time interval between successive snapshots to store in the digest,
+                in seconds.
+            precision: At each snapshot, stack traces totalling up to this fraction of total
+                memory used at that frame may be dropped into the "other stack trace" bucket.
+                This can greatly shrink the size of the digest at no real cost in usefulness.
+                Must be in [0, 1); a value of zero means nothing is dropped.
+            verbose: If true, prints status information to stderr as it runs.
         """
-        HPC.make(self.filebase, timeInterval, verbose)
-        self._openHPC()
+        self.hpc = None
+        try:
+            HPC.make(self.filebase, timeInterval, precision, verbose)
+        finally:
+            # We do this in a "finally" block because if you control-C out of an HPC.make() call,
+            # that stops the build early but we should still load the outcome, especially if we're
+            # in some type of command-line interface where this isn't going to exit the entire
+            # Python interpreter.
+            self._openHPC()
 
     ###########################################################################################
     # Some core access functions
@@ -29,6 +47,15 @@ class Reader(object):
         if you want to compare this to logs data.
         """
         return self.hpm.initialTime
+
+    def finalTime(self) -> float:
+        """Return the time, in seconds since the epoch, of the last snapshot stored."""
+        return self.initialTime() + self.elapsedTime()
+
+    def elapsedTime(self) -> float:
+        """Return the relative time between program start and the last snapshot."""
+        assert self.hpc is not None
+        return len(self.hpc) * self.hpc.timeInterval
 
     def samplingRate(self) -> Dict[int, float]:
         """Return the sampling rate parameters passed to the profiler."""
@@ -55,7 +82,9 @@ class Reader(object):
         """Return the snapshot closest in time (rounding down) to the indicated relative time.
         """
         assert self.hpc is not None
-        index = max(0, min(math.floor(relativeTime / self.hpc.timeInterval), len(self.hpc) - 1))
+        index = max(
+            0, min(math.floor(relativeTime / self.hpc.timeInterval), len(self.hpc) - 1)
+        )
         return self.hpc[index]
 
     ###########################################################################################
@@ -78,7 +107,7 @@ class Reader(object):
             plt.show()
         """
         if not self.hpc:
-            raise RuntimeError('You must make a digest before you can plot usage.')
+            raise RuntimeError("You must make a digest before you can plot usage.")
         times: List[float] = []
         values: List[float] = []
         for snapshot in self.hpc:
@@ -99,19 +128,19 @@ class Reader(object):
             if trace is None:
                 otherSize += size
             else:
-                traceArray = [f'{line.filename}:{line.lineno}' for line in trace]
-                output.write(';'.join(traceArray))
-                output.write(f' {size}\n')
+                traceArray = [f"{line.filename}:{line.lineno}" for line in trace]
+                output.write(";".join(traceArray))
+                output.write(f" {size}\n")
 
         if otherSize > 0:
-            output.write(f'OTHER {otherSize}\n')
+            output.write(f"OTHER {otherSize}\n")
 
     def writeCollapsedStack(self, relativeTime: float, filename: str) -> None:
         """Convenience helper: Grab a snapshot at a particular relative time, and write it in
         collapsed stack format to filename.
         """
         snapshot = self.snapshotAt(relativeTime)
-        with open(filename, 'w') as output:
+        with open(filename, "w") as output:
             self.asCollapsedStack(snapshot, output)
 
     ###########################################################################################

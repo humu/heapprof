@@ -4,11 +4,11 @@ exclude =
   node_modules,
   venv,
   # Compilation artifacts
-  .weaver,
   .git,
-  **/build,
-  **/dist,
-  **/.mypy_cache,
+  build,
+  dist,
+  .mypy_cache,
+  .eggs,
 max-line-length = 100
 ignore = E111,E114,E252,E203,W503,E501
 select = C,E,F,W,B,B950

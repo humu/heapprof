@@ -2,10 +2,7 @@ from typing import Dict, Optional
 
 import _heapprof
 
-from .heap_history import HeapHistory, TimeSlice  # noqa
-from .heap_profile import HeapEvent, HeapProfile, HeapTrace, TraceLine  # noqa
 from .reader import Reader  # noqa
-from .time_snapshot import TimeSnapshot  # noqa
 
 # This default sampling rate was determined through some trial and error. However, it may or may not
 # be the right one for any particular case.
@@ -57,10 +54,3 @@ def stop() -> None:
 def isProfiling() -> bool:
     """Test if the heap profiler is currently running."""
     return _heapprof.isProfiling()
-
-
-def makeDigest(filebase: str, timeInterval: float, verbose: bool=False) -> None:
-    """Parse a .hpx file to create a digested .hpc file, containing snapshots at intervals of
-    timeInterval seconds.
-    """
-    _heapprof.makeDigestFile(filebase, int(timeInterval * 1000), verbose)

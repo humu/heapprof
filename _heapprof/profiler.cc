@@ -4,18 +4,18 @@
 #include <stdio.h>
 #include <string>
 #include "Python.h"
-#include "frameobject.h"
 #include "_heapprof/file_format.h"
 #include "_heapprof/simple_hash.h"
 #include "_heapprof/util.h"
+#include "frameobject.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Profiler
 
 Profiler::Profiler(const char *filebase, Sampler *sampler)
-  : sampler_(sampler),
-    metadata_file_(filebase, ".hpm", true),
-    data_file_(filebase, ".hpd", true) {
+    : sampler_(sampler),
+      metadata_file_(filebase, ".hpm", true),
+      data_file_(filebase, ".hpd", true) {
   if (!metadata_file_ || !data_file_) {
     return;
   }
@@ -26,7 +26,7 @@ Profiler::Profiler(const char *filebase, Sampler *sampler)
   ok_ = true;
 }
 
-Profiler::~Profiler() { }
+Profiler::~Profiler() {}
 
 void Profiler::HandleMalloc(void *ptr, size_t size) {
   assert(ptr != nullptr);

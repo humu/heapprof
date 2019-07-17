@@ -55,9 +55,15 @@
 //    Try to read the metadata header from a .hpm file. Returns (start time,
 //    sampling rate map) on success; may raise EOFError.
 //
-// _heapprof.makeDigestFile(filebase: str, intervalMsec: int, verbose: bool) -> None:
-//    Build a .hpc file out of an .hpd file. intervalMsec is the duration between
-//    successive snapshots to write.
+// _heapprof.makeDigestFile(
+//      filebase: str,
+//      intervalMsec: int,
+//      precision: float,
+//      verbose: bool) -> None:
+//    Build a .hpc file out of an .hpd file. intervalMsec is the duration
+//    between successive snapshots to write. precision is the fractional error
+//    we allow by dropping "tiny, boring" traces; setting it to zero means to
+//    keep everything.
 //
 // _heapprof.readDigestMetadata(fd: int) -> Tuple[float, float, List[int]]:
 //    Read the metadata and index of a .hpc file. Returns
@@ -151,9 +157,24 @@ static PyObject *HeapProfReadMetadata(PyObject *self, PyObject *args) {
 static PyObject *HeapProfMakeDigestFile(PyObject *self, PyObject *args) {
   const char *filebase;
   int interval_msec;
-  bool verbose;
-  if (!PyArg_ParseTuple(args, "sip", &filebase, &interval_msec, &verbose) ||
-      !MakeDigestFile(filebase, interval_msec, verbose)) {
+  double precision;
+  int verbose;
+  if (!PyArg_ParseTuple(args, "sidp", &filebase, &interval_msec, &precision,
+                        &verbose)) {
+    return nullptr;
+  }
+  if (interval_msec < 0) {
+    PyErr_Format(
+        PyExc_ValueError,
+        "Invalid interval %d; must be a positive number of milliseconds.\n");
+    return nullptr;
+  }
+  if (precision < 0 || precision >= 1) {
+    PyErr_Format(PyExc_ValueError,
+                 "Invalid precision %f; must be a value in [0, 1).", precision);
+    return nullptr;
+  }
+  if (!MakeDigestFile(filebase, interval_msec, precision, verbose)) {
     return nullptr;
   }
   Py_RETURN_NONE;

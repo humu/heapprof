@@ -3,8 +3,8 @@
 
 #include <time.h>
 #include "Python.h"
-#include "frameobject.h"
 #include "_heapprof/sampler.h"
+#include "frameobject.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // .hpm files: the metadata of a profile.
@@ -35,9 +35,9 @@ bool SkipFrame(PyFrameObject *pyframe);
 
 ///////////////////////////////////////////////////////////////////////////////
 // .hpd files: the raw log of events.
-// This consists of a sequence of event entries, each of which encodes a timestamp,
-// a trace index (which is a 1-based index into the list of traces in the .hpm file), 
-// a number of bytes, and whether it's an alloc or free.
+// This consists of a sequence of event entries, each of which encodes a
+// timestamp, a trace index (which is a 1-based index into the list of traces in
+// the .hpm file), a number of bytes, and whether it's an alloc or free.
 
 // Bit constants for the index words in an event.
 const uint32_t kDeltaIsNegative = 0x80000000;
@@ -52,8 +52,8 @@ void WriteEvent(int fd, struct timespec *last_clock,
                 size_t size, bool alloc);
 
 // Read a single heap event from the given file descriptor, given a value for
-// the timestamp of the previous event. Returns either a tuple (double delta-time,
-// int traceindex, int size), or nullptr + raises an EOFError.
+// the timestamp of the previous event. Returns either a tuple (double
+// delta-time, int traceindex, int size), or nullptr + raises an EOFError.
 PyObject *ReadEvent(int fd);
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -62,11 +62,12 @@ PyObject *ReadEvent(int fd);
 // .hpd file into a sequence of time snapshots, which can be random-accessed.
 
 // Read filebase.hpd and create filebase.hpc.
-bool MakeDigestFile(const char* filebase, int interval_msec, bool verbose);
+bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
+                    bool verbose);
 
 // Read the metadata and index from a .hpc file. Returns a
-// Tuple[float, float, List[int]], giving the initial time, the time delta between
-// frames, and a list of byte offsets for each frame in the file.
+// Tuple[float, float, List[int]], giving the initial time, the time delta
+// between frames, and a list of byte offsets for each frame in the file.
 PyObject *ReadDigestMetadata(int fd);
 
 // Read a single snapshot from a digest. The offset is one of the entries in the
