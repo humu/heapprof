@@ -12,22 +12,11 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Profiler
 
-static bool OpenFile(const char *filebase, const char *suffix, int *fd) {
-  const std::string filename = std::string(filebase) + suffix;
-  *fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0600);
-  if (*fd == -1) {
-    PyErr_SetFromErrnoWithFilenameObject(
-        PyExc_OSError,
-        PyUnicode_FromStringAndSize(filename.c_str(), filename.length()));
-    return false;
-  } else {
-    return true;
-  }
-}
-
-Profiler::Profiler(const char *filebase, Sampler *sampler) : sampler_(sampler) {
-  if (!OpenFile(filebase, ".hpm", &metadata_file_) ||
-      !OpenFile(filebase, ".hpd", &data_file_)) {
+Profiler::Profiler(const char *filebase, Sampler *sampler)
+  : sampler_(sampler),
+    metadata_file_(filebase, ".hpm", true),
+    data_file_(filebase, ".hpd", true) {
+  if (!metadata_file_ || !data_file_) {
     return;
   }
 
@@ -37,14 +26,7 @@ Profiler::Profiler(const char *filebase, Sampler *sampler) : sampler_(sampler) {
   ok_ = true;
 }
 
-Profiler::~Profiler() {
-  if (metadata_file_ != -1 && close(metadata_file_) == -1) {
-    PyErr_SetFromErrno(PyExc_OSError);
-  }
-  if (data_file_ != -1 && close(data_file_) == -1) {
-    PyErr_SetFromErrno(PyExc_OSError);
-  }
-}
+Profiler::~Profiler() { }
 
 void Profiler::HandleMalloc(void *ptr, size_t size) {
   assert(ptr != nullptr);

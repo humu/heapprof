@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <time.h>
+#include <string>
 #include "Python.h"
 
 // A note here: We need to achieve some portable operations which aren't yet available in the C++
@@ -31,6 +32,33 @@
 inline int Log2RoundUp(uint64_t x) {
   return x ? 64 - absl::base_internal::CountLeadingZeros64(x - 1) : 0;
 }
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// File I/O helpers
+
+// A ScopedFile is a scoped file descriptor that closes (and optionally deletes!) on exit.
+class ScopedFile {
+  public:
+    // Create a ScopedFile for either reading or writing, depending on the parameter. After
+    // constructing it, if this is false, the file failed to open and the exception has been set.
+    ScopedFile(const char *filebase, const char *extension, bool write);
+    ~ScopedFile();
+
+    operator int() const { return fd_; }
+    operator bool() const { return fd_ != -1; }
+    const std::string &filename() const { return filename_; }
+
+    // If delete-on-exit is set, this file will not just be closed on exit, it will be deleted. You
+    // can use this to manage files that should only be preserved if writing them works.
+    void set_delete_on_exit(bool v) { delete_ = v; }
+
+  private:
+    const std::string filename_;
+    const int fd_;
+    bool delete_;
+};
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Data writing helpers

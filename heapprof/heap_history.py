@@ -99,11 +99,13 @@ class HeapHistory(NamedTuple):
                 history.append(TimeSlice(nextSliceTime, snapshot.totalSize, topUsers))
                 nextSliceTime += timeGranularity
 
-        for event in profile:
+        for index, event in enumerate(profile.readEvents()):
             maxTime = max(maxTime, event.timestamp)
             if event.timestamp > nextSliceTime:
                 dumpEventsUntil(event.timestamp)
             snapshot.add(event)
+            if index % 10000 == 0:
+                print(f'Processed {index} events spanning {maxTime - profile.initialTime} seconds')
 
         # Dump the final slice
         history.append(TimeSlice(maxTime, snapshot.totalSize, prepTimeSlice()))

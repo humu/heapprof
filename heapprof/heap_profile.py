@@ -3,6 +3,8 @@ from typing import Dict, Iterator, List, NamedTuple, Optional, Tuple
 
 import _heapprof
 
+from ._read import readFixed32, readVarint
+
 
 class HeapEvent(NamedTuple):
     # The time at which this event happened, in seconds since the epoch.
@@ -90,6 +92,30 @@ class HeapProfile(object):
                     newTime = lastTime + deltaTime
                     yield HeapEvent(newTime, traceindex, size, self.scaleFactor(size))
                     lastTime = newTime
+
+    def readEvents(self) -> Iterator[HeapEvent]:
+        """A pure-python version of __iter__."""
+        try:
+            datafile = open(self._dataFileName, 'rb')
+            lastTime = self._initialTime
+            while True:
+                indexword = readFixed32(datafile)
+                deltaTime = readVarint(datafile) + 1e-6 * readVarint(datafile)
+                size = readVarint(datafile)
+
+                if indexword & 0x80000000:
+                    deltaTime = -deltaTime
+                if indexword & 0x40000000:
+                    size = -size
+
+                traceindex = indexword & 0x3FFFFFFF
+                newTime = lastTime + deltaTime
+                yield HeapEvent(newTime, traceindex, size, self.scaleFactor(size))
+                lastTime = newTime
+        except EOFError:
+            pass
+        finally:
+            datafile.close()
 
     def trace(self, traceindex: int) -> Optional[HeapTrace]:
         """Given a traceindex (of the sort found in a HeapEvent), find the corresponding stack
