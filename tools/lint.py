@@ -42,8 +42,9 @@ def findFiles(
 
 
 def runCommand(*command: str) -> bool:
+    pythonPath = ','.join(sys.path)
     try:
-        subprocess.check_call(list(command), cwd=REPO_ROOT)
+        subprocess.check_call([f'PYTHONPATH="{pythonPath}"', *command], cwd=REPO_ROOT, shell=True)
         return True
     except subprocess.CalledProcessError:
         return False
