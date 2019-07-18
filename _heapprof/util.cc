@@ -1,5 +1,6 @@
 #include "_heapprof/util.h"
 #include <unistd.h>
+#include <string>
 
 #define VARINT_BUFFER_SIZE MAX_UNSIGNED_VARINT_SIZE(uint64_t)
 
@@ -104,4 +105,30 @@ PyObject *ReadStringFromFile(int fd) {
 
   free(buffer);
   return result;
+}
+
+static inline int ScopedFileMode(bool write) {
+  return write ? O_WRONLY | O_CREAT | O_TRUNC : O_RDONLY;
+}
+
+ScopedFile::ScopedFile(const char *filebase, const char *suffix, bool write)
+    : filename_(std::string(filebase) + suffix),
+      fd_(open(filename_.c_str(), ScopedFileMode(write), 0600)),
+      delete_(false) {
+  if (fd_ == -1) {
+    PyErr_SetFromErrnoWithFilenameObject(
+        PyExc_OSError,
+        PyUnicode_FromStringAndSize(filename_.c_str(), filename_.length()));
+  }
+}
+
+ScopedFile::~ScopedFile() {
+  if (fd_ != -1 && close(fd_) == -1) {
+    PyErr_SetFromErrno(PyExc_OSError);
+    return;
+  }
+  if (delete_ && unlink(filename_.c_str()) == -1) {
+    PyErr_SetFromErrno(PyExc_OSError);
+    return;
+  }
 }

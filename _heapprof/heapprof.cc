@@ -54,6 +54,26 @@
 // _heapprof.readMetadata(fd: int) -> Tuple[float, Dict[int, float]]
 //    Try to read the metadata header from a .hpm file. Returns (start time,
 //    sampling rate map) on success; may raise EOFError.
+//
+// _heapprof.makeDigestFile(
+//      filebase: str,
+//      intervalMsec: int,
+//      precision: float,
+//      verbose: bool) -> None:
+//    Build a .hpc file out of an .hpd file. intervalMsec is the duration
+//    between successive snapshots to write. precision is the fractional error
+//    we allow by dropping "tiny, boring" traces; setting it to zero means to
+//    keep everything.
+//
+// _heapprof.readDigestMetadata(fd: int) -> Tuple[float, float, List[int]]:
+//    Read the metadata and index of a .hpc file. Returns
+//      float: initial time, in seconds since the epoch
+//      float: delta time between snapshots, in seconds
+//      List[int]: sorted list of byte offsets for the snapshots in the file
+//
+// _heapprof.readDigestEntry(fd: int, offset: int) -> Dict[int, int]:
+//    Read the snapshot at a given offset from the given file. Returns a dict
+//    from traceindex to number of bytes.
 
 static PyObject *HeapProfStart(PyObject *self, PyObject *args) {
   // NB: PyArg_ParseTuple raises a Py exception on error.
@@ -134,6 +154,49 @@ static PyObject *HeapProfReadMetadata(PyObject *self, PyObject *args) {
   return ReadMetadata(fd);
 }
 
+static PyObject *HeapProfMakeDigestFile(PyObject *self, PyObject *args) {
+  const char *filebase;
+  int interval_msec;
+  double precision;
+  int verbose;
+  if (!PyArg_ParseTuple(args, "sidp", &filebase, &interval_msec, &precision,
+                        &verbose)) {
+    return nullptr;
+  }
+  if (interval_msec < 0) {
+    PyErr_Format(
+        PyExc_ValueError,
+        "Invalid interval %d; must be a positive number of milliseconds.\n");
+    return nullptr;
+  }
+  if (precision < 0 || precision >= 1) {
+    PyErr_Format(PyExc_ValueError,
+                 "Invalid precision %f; must be a value in [0, 1).", precision);
+    return nullptr;
+  }
+  if (!MakeDigestFile(filebase, interval_msec, precision, verbose)) {
+    return nullptr;
+  }
+  Py_RETURN_NONE;
+}
+
+static PyObject *HeapProfReadDigestMetadata(PyObject *self, PyObject *args) {
+  int fd;
+  if (!PyArg_ParseTuple(args, "i", &fd)) {
+    return nullptr;
+  }
+  return ReadDigestMetadata(fd);
+}
+
+static PyObject *HeapProfReadDigestEntry(PyObject *self, PyObject *args) {
+  int fd;
+  Py_ssize_t offset;
+  if (!PyArg_ParseTuple(args, "in", &fd, &offset)) {
+    return nullptr;
+  }
+  return ReadDigestEntry(fd, offset);
+}
+
 PyDoc_STRVAR(module_doc, "Logging heap profiler");
 
 static PyMethodDef module_methods[] = {
@@ -150,6 +213,12 @@ static PyMethodDef module_methods[] = {
      "Read a raw stack trace from an hpm file"},
     {"readMetadata", HeapProfReadMetadata, METH_VARARGS,
      "Read the MD header from an hpm file"},
+    {"makeDigestFile", HeapProfMakeDigestFile, METH_VARARGS,
+     "Convert a .hpd file into a .hpc file"},
+    {"readDigestMetadata", HeapProfReadDigestMetadata, METH_VARARGS,
+     "Read the metadata from a .hpc file"},
+    {"readDigestEntry", HeapProfReadDigestEntry, METH_VARARGS,
+     "Read a single snapshot from a .hpc file"},
     {nullptr, nullptr, 0, nullptr}};
 
 static struct PyModuleDef module_def = {

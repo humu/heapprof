@@ -38,36 +38,33 @@ heapprof.start('filename')
 heapprof.stop()
 ```
 
-Several tools are provided to read and analyze .hpx files.
-
-* The `HeapProfile` class is the base .hpx reader; it lets you access the sequence of heap events
-    and the corresponding stack traces.
-* The `HeapHistory` class helps you look at the time-evolution of the heap. Its outputs can easily
-    be visualized with libraries like matplotlib.
-* The `TimeSnapshot` class lets you look at the detailed state of the world at any given time. Its
-    outputs can be analyzed in depth with a range of visualization tools.
-
-For example:
+To analyze .hpx files, you can use the `heapprof.Reader` class. Normally, the first thing you want
+to do with this class is build a _digest_ (a .hpc file): this scans over the input files in a batch
+and forms a concise summary of the data, which you can easily use for further analyses. For example:
 
 ```
 import heapprof
+r = heapprof.Reader('filename')
+r.makeDigest()
 
-profile = heapprof.HeapProfile('filename')
-# Get a history at 60-second resolution
-hist = heapprof.HeapHistory.make(profile, timeGranularity=60)
-
-# Plot this history. This logic isn't included as part of heapprof because including matplotlib
-# would create a huge dependency bloat for little value.
-a = hist.asArrays(1 << 30)  # 1GB scale on the y-axis
+# To generate a plot of memory usage over time using matplotlib; NB that this package doesn't
+# include that as a dependency, it would be needless bloat.
 import matplotlib.pyplot as plt
-plt.subplots().stackplot(a[0], *a[1])
+_, ax = plt.subplots()
+ax.plot(*r.plotTotalUsage())
 plt.show()
 
-# Now you look at the history and realize that something seems interesting at t=560 seconds.
-# This command builds a snapshot at that time, and writes it in "collapsed stack" format to
-# flame-560.txt. You can then explore it in detail using tools like speedscope.app.
-heapprof.TimeSnapshot.atTime(profile, 560).writeCollapsedStack('flame-560.txt')
+# Hmm, it looks from the plot like something interesting happened 350 seconds in. Let's get some
+# details. You can view "collapsed stack" files with tools like speedscope.app.
+r.writeCollapsedStack(350, 'flame-350.txt')
 ```
+
+More options for these methods (and other ways to look at the data) can be found in the included
+Python methods.
+
+**Tip:** Partially-written .hpd and .hpm files are valid; that means that you can do some analysis
+while your program is running. Also, if you ctrl-C while a digest is building, it will write a valid
+digest up to whatever timestamp it reached.
 
 ## Advanced options: managing the sampling rate
 
@@ -186,11 +183,16 @@ heapprof is an open source project distributed under the [MIT License](LICENSE).
 questions, and feature requests should be done via the
 [GitHub issues page](https://github.com/humu-com/heapprof/issues).
 
-Pull requests for bugfixes and features are welcome! Generally, you should discuss features or API
-changes on the tracking issue first, to make sure everyone is aligned on direction. Python code
-should follow PEP8+[Black](https://github.com/python/black) formatting, while C/C++ code should
-follow the [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html). Code should
-be unittested and tests should be invoked by `setup.py test`.
+Pull requests for bugfixes and features are welcome!
+
+* Generally, you should discuss features or API changes on the tracking issue first, to make sure
+  everyone is aligned on direction.
+* Lint and style: Python code should follow PEP8+[Black](https://github.com/python/black)
+  formatting, and should pass mypy with strict type checking, while C/C++ code should follow the
+  [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html). You can check a
+  client against the same lint checks run by the continuous integration test by running
+  `python tools/lint.py`; if you add `--fix`, it will try to fix any errors it can in-place.
+* Unittests are highly desired and should be invocable by `setup.py test`.
 
 Most importantly, heapprof is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By
 participating in this product, you agree to abide by its terms. This code also governs behavior on

@@ -2,9 +2,7 @@ from typing import Dict, Optional
 
 import _heapprof
 
-from .heap_history import HeapHistory, TimeSlice  # noqa
-from .heap_profile import HeapEvent, HeapProfile, HeapTrace, TraceLine  # noqa
-from .time_snapshot import TimeSnapshot  # noqa
+from .reader import Reader  # noqa
 
 # This default sampling rate was determined through some trial and error. However, it may or may not
 # be the right one for any particular case.

@@ -1,4 +1,5 @@
 import os
+import time
 import unittest
 from tempfile import TemporaryDirectory
 
@@ -15,36 +16,32 @@ class EndToEndTest(unittest.TestCase):
 
     def testHeapProfiler(self) -> None:
         with TemporaryDirectory() as path:
-            self.assertFalse(heapprof.isProfiling())
-            hpxFile = os.path.join(path, 'hprof')
+            hpxFile = os.path.join(path, "hprof")
 
+            # Do something to make a heap profile
             heapprof.start(hpxFile)
-            self.assertTrue(heapprof.isProfiling())
-            list(range(10000))
+            list(range(100000))
+            time.sleep(0.05)
+            list(range(100000))
             heapprof.stop()
 
-            self.assertFalse(heapprof.isProfiling())
+            reader = heapprof.Reader(hpxFile)
+            # No digest yet, so we can't check elapsed time.
+            with self.assertRaises(AssertionError):
+                reader.elapsedTime()
 
-            profile = heapprof.HeapProfile(hpxFile)
+            # Make a digest with 10-millisecond intervals and no rounding.
+            reader.makeDigest(timeInterval=0.01, precision=0)
 
-            # We can't check for absolute equality of the dicts, since the sampling rate stored in
-            # the files is uint32-quantized.
-            self.assertListEqual(
-                sorted(list(heapprof.DEFAULT_SAMPLING_RATE.keys())),
-                sorted(list(profile.samplingRate.keys())),
-            )
-            for key in profile.samplingRate:
+            self.assertGreaterEqual(reader.elapsedTime(), 0.05)
+            self.assertAlmostEqual(reader.snapshotInterval(), 0.01)
+            for index, snapshot in enumerate(reader.snapshots()):
                 self.assertAlmostEqual(
-                    heapprof.DEFAULT_SAMPLING_RATE[key], profile.samplingRate[key]
+                    index * reader.snapshotInterval(), snapshot.relativeTime
                 )
-
-            # Not really sure how to test the exact contents of this, but let's at least make sure
-            # we can iterate the file without crashing.
-            self.assertGreater(len(list(profile)), 0)
-
-            history = heapprof.HeapHistory.make(profile)
-            self.assertGreaterEqual(len(history.history), 1)
+                # It would be nice to do some more sophisticated testing here.
+                self.assertGreater(len(snapshot.usage), 0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

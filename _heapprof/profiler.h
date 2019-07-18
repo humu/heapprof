@@ -7,6 +7,7 @@
 #include "Python.h"
 #include "_heapprof/abstract_profiler.h"
 #include "_heapprof/sampler.h"
+#include "_heapprof/util.h"
 
 // Profiler is the heart of heap profiling. When the profiler is on, a
 // singleton Profiler exists, and is patched into the malloc calls using
@@ -50,8 +51,8 @@ class Profiler : public AbstractProfiler {
   std::unique_ptr<Sampler> sampler_;
 
   // File pointers to the two output files.
-  int metadata_file_ = -1;
-  int data_file_ = -1;
+  ScopedFile metadata_file_;
+  ScopedFile data_file_;
 
   // The time of the previous event.
   struct timespec last_clock_;
