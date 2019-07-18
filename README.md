@@ -62,6 +62,10 @@ r.writeCollapsedStack(350, 'flame-350.txt')
 More options for these methods (and other ways to look at the data) can be found in the included
 Python methods.
 
+**Tip:** Partially-written .hpd and .hpm files are valid; that means that you can do some analysis
+while your program is running. Also, if you ctrl-C while a digest is building, it will write a valid
+digest up to whatever timestamp it reached.
+
 ## Advanced options: managing the sampling rate
 
 The sampling rate controls the probability with which heap events are written. Too high a sampling
@@ -179,14 +183,16 @@ heapprof is an open source project distributed under the [MIT License](LICENSE).
 questions, and feature requests should be done via the
 [GitHub issues page](https://github.com/humu-com/heapprof/issues).
 
-Pull requests for bugfixes and features are welcome! Generally, you should discuss features or API
-changes on the tracking issue first, to make sure everyone is aligned on direction. Python code
-should follow PEP8+[Black](https://github.com/python/black) formatting, while C/C++ code should
-follow the [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html). Unittests
-are highly desired and should be invocable by `setup.py test`.
+Pull requests for bugfixes and features are welcome!
 
-You can check changes against lint by running `python tools/lint.py`; if you add `--fix`, it will
-try to fix any errors it can in-place.
+* Generally, you should discuss features or API changes on the tracking issue first, to make sure
+  everyone is aligned on direction.
+* Lint and style: Python code should follow PEP8+[Black](https://github.com/python/black)
+  formatting, and should pass mypy with strict type checking, while C/C++ code should follow the
+  [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html). You can check a
+  client against the same lint checks run by the continuous integration test by running
+  `python tools/lint.py`; if you add `--fix`, it will try to fix any errors it can in-place.
+* Unittests are highly desired and should be invocable by `setup.py test`.
 
 Most importantly, heapprof is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By
 participating in this product, you agree to abide by its terms. This code also governs behavior on
