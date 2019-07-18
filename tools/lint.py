@@ -61,6 +61,8 @@ def lintPyFiles(files: List[str]) -> bool:
         ok = False
     if not runCommand('python', '-m', 'black', '--check', *files):
         ok = False
+    if not runCommand('python', '-m', 'mypy', *files):
+        ok = False
 
     print(f'Lint of {len(files)} Python files {"successful" if ok else "failed"}!')
     return ok

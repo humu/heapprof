@@ -83,7 +83,7 @@ setup(
     # version of this run on 3.4 or above if anyone really wants to.
     python_requires=">=3.7",
     ext_modules=[cppmodule],
-    packages=find_packages(exclude=["tests"]),
+    packages=find_packages(exclude=["tests", "tools"]),
     # Testing
     test_suite="nose.collector",
     tests_require=["nose", "mypy"],

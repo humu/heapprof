@@ -66,18 +66,12 @@ jobs:
           command: |
             python -m venv venv
             . venv/bin/activate
-            pip install --upgrade pip mypy
+            pip install --upgrade pip
             pip install -r tools/requirements.txt
       - save_cache:
           paths:
             - ./venv
           key: v1-dependencies-{{ checksum "tools/requirements.txt" }}
-
-      - run:
-          name: run_mypy
-          command: |
-            . venv/bin/activate
-            mypy .
 
       - run:
           name: run_lint

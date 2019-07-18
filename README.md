@@ -182,8 +182,11 @@ questions, and feature requests should be done via the
 Pull requests for bugfixes and features are welcome! Generally, you should discuss features or API
 changes on the tracking issue first, to make sure everyone is aligned on direction. Python code
 should follow PEP8+[Black](https://github.com/python/black) formatting, while C/C++ code should
-follow the [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html). Code should
-be unittested and tests should be invoked by `setup.py test`.
+follow the [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html). Unittests
+are highly desired and should be invocable by `setup.py test`.
+
+You can check changes against lint by running `python tools/lint.py`; if you add `--fix`, it will
+try to fix any errors it can in-place.
 
 Most importantly, heapprof is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By
 participating in this product, you agree to abide by its terms. This code also governs behavior on
