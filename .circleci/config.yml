@@ -76,6 +76,7 @@ jobs:
       - run:
           name: run_lint
           command: |
+            . venv/bin/activate
             python tools/lint.py
 
       - store_artifacts:
