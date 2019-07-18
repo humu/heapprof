@@ -38,36 +38,29 @@ heapprof.start('filename')
 heapprof.stop()
 ```
 
-Several tools are provided to read and analyze .hpx files.
-
-* The `HeapProfile` class is the base .hpx reader; it lets you access the sequence of heap events
-    and the corresponding stack traces.
-* The `HeapHistory` class helps you look at the time-evolution of the heap. Its outputs can easily
-    be visualized with libraries like matplotlib.
-* The `TimeSnapshot` class lets you look at the detailed state of the world at any given time. Its
-    outputs can be analyzed in depth with a range of visualization tools.
-
-For example:
+To analyze .hpx files, you can use the `heapprof.Reader` class. Normally, the first thing you want
+to do with this class is build a _digest_ (a .hpc file): this scans over the input files in a batch
+and forms a concise summary of the data, which you can easily use for further analyses. For example:
 
 ```
 import heapprof
+r = heapprof.Reader('filename')
+r.makeDigest()
 
-profile = heapprof.HeapProfile('filename')
-# Get a history at 60-second resolution
-hist = heapprof.HeapHistory.make(profile, timeGranularity=60)
-
-# Plot this history. This logic isn't included as part of heapprof because including matplotlib
-# would create a huge dependency bloat for little value.
-a = hist.asArrays(1 << 30)  # 1GB scale on the y-axis
+# To generate a plot of memory usage over time using matplotlib; NB that this package doesn't
+# include that as a dependency, it would be needless bloat.
 import matplotlib.pyplot as plt
-plt.subplots().stackplot(a[0], *a[1])
+_, ax = plt.subplots()
+ax.plot(*r.plotTotalUsage())
 plt.show()
 
-# Now you look at the history and realize that something seems interesting at t=560 seconds.
-# This command builds a snapshot at that time, and writes it in "collapsed stack" format to
-# flame-560.txt. You can then explore it in detail using tools like speedscope.app.
-heapprof.TimeSnapshot.atTime(profile, 560).writeCollapsedStack('flame-560.txt')
+# Hmm, it looks from the plot like something interesting happened 350 seconds in. Let's get some
+# details. You can view "collapsed stack" files with tools like speedscope.app.
+r.writeCollapsedStack(350, 'flame-350.txt')
 ```
+
+More options for these methods (and other ways to look at the data) can be found in the included
+Python methods.
 
 ## Advanced options: managing the sampling rate
 
