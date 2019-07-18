@@ -1,5 +1,6 @@
 import linecache
-from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple
+from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Sequence,
+                    Tuple)
 
 import _heapprof
 
@@ -35,9 +36,7 @@ class HPM(object):
         self._allTracesRead = False
 
         # Read the metadata and compute our scale factors.
-        self._initialTime, self._samplingRate = _heapprof.readMetadata(
-            self._mdfile.fileno()
-        )
+        self._initialTime, self._samplingRate = _heapprof.readMetadata(self._mdfile.fileno())
         self._scaleFactors = sorted(
             [
                 (maxSize, 1 / probability if probability != 0 else 0)
@@ -151,9 +150,7 @@ class HPD(object):
                     break
                 else:
                     newTime = lastTime + deltaTime
-                    yield self.Event(
-                        newTime, traceindex, size, self.hpm.scaleFactor(size)
-                    )
+                    yield self.Event(newTime, traceindex, size, self.hpm.scaleFactor(size))
                     lastTime = newTime
 
 
@@ -201,9 +198,7 @@ class HPC(Sequence["HPC.Snapshot"]):
         return key in self.offsets
 
     @classmethod
-    def make(
-        cls, filebase: str, timeInterval: float, precision: float, verbose: bool
-    ) -> None:
+    def make(cls, filebase: str, timeInterval: float, precision: float, verbose: bool) -> None:
         """Build a .hpc file out of a .hpm and .hpd file.
 
         Args:

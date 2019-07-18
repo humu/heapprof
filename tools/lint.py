@@ -4,19 +4,19 @@ import subprocess
 import sys
 from typing import List, Optional, Set
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-EXCLUDE_NAMES = {"build", "dist"}
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+EXCLUDE_NAMES = {'build', 'dist'}
 
 
 def addFileToList(filename: str, pyFiles: List[str], cppFiles: List[str]) -> None:
-    parts = os.path.basename(filename).rsplit(".", 1)
+    parts = os.path.basename(filename).rsplit('.', 1)
     if len(parts) < 2:
         return
 
     suffix = parts[-1]
-    if suffix == "py":
+    if suffix == 'py':
         pyFiles.append(filename)
-    elif suffix in ("c", "cpp", "cc", "h", "hpp"):
+    elif suffix in ('c', 'cpp', 'cc', 'h', 'hpp'):
         cppFiles.append(filename)
 
 
@@ -32,7 +32,7 @@ def findFiles(
     seenDirs.add(rootDir)
 
     for dirEntry in os.scandir(rootDir):
-        if dirEntry.name in EXCLUDE_NAMES or dirEntry.name.startswith("."):
+        if dirEntry.name in EXCLUDE_NAMES or dirEntry.name.startswith('.'):
             continue
 
         if dirEntry.is_dir() and dirEntry.path not in seenDirs:
@@ -54,12 +54,14 @@ def lintPyFiles(files: List[str]) -> bool:
         return True
 
     ok = True
-    if not runCommand("python", "-m", "flake8", *files):
+    if not runCommand('python', '-m', 'flake8', *files):
         ok = False
-    if not runCommand("python", "-m", "isort", "--atomic", "--check-only", *files):
+    if not runCommand('python', '-m', 'isort', '--atomic', '--check-only', *files):
         ok = False
-    if not runCommand("python", "-m", "black", "--check", *files):
+    if not runCommand('python', '-m', 'black', '--check', *files):
         ok = False
+
+    print(f'Lint of {len(files)} Python files {"successful" if ok else "failed"}!')
     return ok
 
 
@@ -67,28 +69,30 @@ def fixPyFiles(files: List[str]) -> None:
     if not files:
         return
 
-    runCommand("python", "-m", "isort", "--atomic", *files)
-    runCommand("python", "-m", "black", *files)
+    runCommand('python', '-m', 'isort', '--atomic', *files)
+    runCommand('python', '-m', 'black', *files)
 
 
 def lintCppFiles(files: List[str]) -> bool:
     if not files:
         return True
 
-    return runCommand("cpplint", "--quiet", *files)
+    ok = runCommand('python', '-m', 'cpplint', '--quiet', *files)
+    print(f'Lint of {len(files)} C/C++ files {"successful" if ok else "failed"}!')
+    return ok
 
 
 def fixCppFiles(files: List[str]) -> None:
     if not files:
         return
 
-    return runCommand("clang-format", "-i", "-style=Google", *files)
+    return runCommand('clang-format', '-i', '-style=Google', *files)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser("linter")
-    parser.add_argument("--fix", action="store_true", help="Fix files in-place")
-    parser.add_argument("files", nargs="*", help="Files to lint; default all")
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser('linter')
+    parser.add_argument('--fix', action='store_true', help='Fix files in-place')
+    parser.add_argument('files', nargs='*', help='Files to lint; default all')
     args = parser.parse_args()
 
     pyFiles: List[str] = []
