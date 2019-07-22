@@ -34,6 +34,7 @@ def makeDotFile(
 
     nodes = _makeNodes(graphs, minNodeFraction)
     edges = _makeEdges(graphs, nodes, minEdgeFraction)
+    _makeRootNode(graphs, nodes, edges)
     nodeMap: Dict[str, str] = {}
     if collapseNodes:
         _collapseNodes(graphs, nodes, edges, nodeMap)
@@ -126,19 +127,19 @@ class _NodeInfo(NamedTuple):
         # Trace lines live in horizontal spanning cells. NB that the filename is the only string in
         # this output that we don't directly synthesize, so we need to HTML-escape it for safety!
         for traceLine in self.traceLines:
-            result.write(
-                f'<tr><td colspan="{len(self.sizes)}" bgcolor="white">'
-                f'{html.escape(traceLine.filename)}:{traceLine.lineno}</td></tr>'
-            )
+            codeLine = html.escape(traceLine.filename)
+            line = f'{codeLine}:{traceLine.lineno}' if traceLine.lineno else codeLine
+            result.write(f'<tr><td colspan="{len(self.sizes)}" bgcolor="white">{line}</td></tr>')
 
         # Sizes live in vertically slices cells.
         result.write('<tr>')
         for index, (nodeSize, graph) in enumerate(zip(self.sizes, graphs)):
-            color = _color(nodeSize.cumSize / graph.totalUsage)
+            fracUsage = nodeSize.cumSize / graph.totalUsage
+            color = _color(fracUsage)
             result.write(
-                f'<td color="white" bgcolor="{color}" cellspacing="1">'
-                f'{bytesString(nodeSize.localSize)} / {bytesString(nodeSize.cumSize)}'
-                f'</td>'
+                f'<td color="white" bgcolor="{color}" cellspacing="4">'
+                f'{bytesString(nodeSize.localSize)} / {bytesString(nodeSize.cumSize)} = '
+                f'{int(100 * fracUsage):2d}%</td>'
             )
         result.write('</tr></table> >')
 
@@ -156,7 +157,7 @@ def _makeNodes(graphs: List['UsageGraph'], minNodeFraction: float) -> Dict[str, 
 
             nodeId = _nodeId(node)
             if nodeId not in result:
-                result[nodeId] = _NodeInfo([node], [_NodeSize()] * len(graphs))
+                result[nodeId] = _NodeInfo([node], [_NodeSize() for i in range(len(graphs))])
 
             result[nodeId].sizes[index].cumSize = cumSize
             result[nodeId].sizes[index].localSize = graph.nodeLocalUsage.get(node, 0)
@@ -171,11 +172,11 @@ _EdgeList = Dict[str, Set[str]]
 
 
 class _NodeEdges(NamedTuple):
-    incomingEdges: _EdgeList = defaultdict(set)  # dict dst -> srces
-    outgoingEdges: _EdgeList = defaultdict(set)  # dict src -> dsts
+    incomingEdges: _EdgeList  # dict dst -> srces
+    outgoingEdges: _EdgeList  # dict src -> dsts
 
     # This is a dict from (srcId, dstId) to a list of sizes parallel to the set of graphs.
-    edgeSizes: Dict[Tuple[str, str], List[int]] = {}
+    edgeSizes: Dict[Tuple[str, str], List[int]]
 
 
 def _makeEdges(
@@ -183,7 +184,7 @@ def _makeEdges(
 ) -> _NodeEdges:
     """Build the initial set of edges. Returns a list of edge sets parallel to graphs.
     """
-    edges = _NodeEdges()
+    edges = _NodeEdges(defaultdict(set), defaultdict(set), {})
     for index, graph in enumerate(graphs):
         for (src, dst), edgeSize in graph.edgeUsage.items():
             srcId = _nodeId(src)
@@ -194,7 +195,8 @@ def _makeEdges(
                 continue
 
             srcCumSize = nodes[srcId].sizes[index].cumSize
-            fracWeight = edgeSize / srcCumSize
+            fracWeight = edgeSize / srcCumSize if srcCumSize else 1
+
             if fracWeight < minEdgeFraction:
                 continue
 
@@ -213,6 +215,35 @@ def _makeEdges(
 # Node merging logic
 
 
+def _makeRootNode(
+    graphs: List['UsageGraph'], nodes: Dict[str, _NodeInfo], edges: _NodeEdges
+) -> None:
+    """If there isn't already a unique root node to the graph, create a synthetic one that has the
+    overall program usage data in it.
+    """
+    rootNodes: Set[set] = set()
+    for nodeId in nodes.keys():
+        if nodeId not in edges.incomingEdges:
+            rootNodes.add(nodeId)
+
+    if len(rootNodes) < 2:
+        return
+
+    newRoot = _NodeInfo(
+        [RawTraceLine('Program Root', '0')],
+        [_NodeSize(cumSize=graph.totalUsage, localSize=0) for graph in graphs],
+    )
+    newRootId = 'root'
+
+    nodes[newRootId] = newRoot
+    for rootNode in rootNodes:
+        edges.outgoingEdges[newRootId].add(rootNode)
+        edges.incomingEdges[rootNode].add(newRootId)
+
+        rootNodeInfo = nodes[rootNode]
+        edges.edgeSizes[(newRootId, rootNode)] = [size.cumSize for size in rootNodeInfo.sizes]
+
+
 def _collapseNodes(
     graphs: List['UsageGraph'],
     nodes: Dict[str, _NodeInfo],
@@ -225,7 +256,9 @@ def _collapseNodes(
     """
     for nodeId, nodeInfo in nodes.items():
         # If the node has a nontrivial local contribution, we shouldn't collapse it.
-        maxLocalFrac = max(size.localSize / size.cumSize for size in nodeInfo.sizes)
+        maxLocalFrac = max(
+            size.localSize / size.cumSize if size.cumSize else 0 for size in nodeInfo.sizes
+        )
         if maxLocalFrac >= 0.01:
             continue
 
@@ -246,8 +279,8 @@ def _collapseNodes(
 
         # If we get here, we indeed want to collapse dstId into nodeId!
         srcId = nodeMap.get(nodeId, nodeId)
-        srcInfo = nodes[srcId]
-        srcInfo.add(nodes[dstId])
+        dstId = nodeMap.get(dstId, dstId)
+        nodes[srcId].add(nodes[dstId])
         nodeMap[dstId] = srcId
 
     # Now update the edge size map.
@@ -289,7 +322,7 @@ def _render(
     # Edges are colored by edge fraction; white is assigned to minEdgeFraction, black to
     # max(minEdgeFraction, 0.5), and we do a linear gradient between those two points.
     blackCutoff = max(minEdgeFraction, 0.5)
-    scaleDenom = 255 / (blackCutoff - minEdgeFraction) if blackCutoff > minEdgeFraction else 0
+    scaleDenom = 180 / (blackCutoff - minEdgeFraction) if blackCutoff > minEdgeFraction else 0
 
     # Now we're going to render the edges. While we have N separate edge bundles for each of the N
     # graph stages, we're going to instead group these into single edges.
@@ -309,7 +342,7 @@ def _render(
 
             edgeSizes = edges.edgeSizes[edgeKey]
             fracWeights = [
-                edgeSize / srcSize.cumSize
+                edgeSize / srcSize.cumSize if srcSize.cumSize else 0
                 for edgeSize, srcSize in zip(edgeSizes, nodes[srcId].sizes)
             ]
             fracWeight = max(fracWeights)

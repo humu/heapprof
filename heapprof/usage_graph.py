@@ -92,7 +92,7 @@ class UsageGraph(NamedTuple):
         dotFile: TextIO,
         minNodeFraction: float = 0.01,
         minEdgeFraction: float = 0.05,
-        collapseLines: bool = True,
+        collapseNodes: bool = True,
     ) -> None:
         """Write out a UsageGraph as a dot graph. The result can be visualized using graphviz, with
         a command like
@@ -107,7 +107,7 @@ class UsageGraph(NamedTuple):
                 are dropped for visual clarity.
             minEdgeFraction: Edges whose size is less than this fraction of their source node's
                 cumulative usage are dropped for visual clarity.
-            collapseLines: If True, groups of trace lines that have no branching can get merged
+            collapseNodes: If True, groups of trace lines that have no branching can get merged
                 into each other.
         """
         return makeDotFile(
@@ -115,7 +115,7 @@ class UsageGraph(NamedTuple):
             [self],
             minNodeFraction=minNodeFraction,
             minEdgeFraction=minEdgeFraction,
-            collapseLines=collapseLines,
+            collapseNodes=collapseNodes,
         )
 
     def writeDotFile(self, filename: str, **kwargs) -> None:
@@ -130,7 +130,7 @@ class UsageGraph(NamedTuple):
         *usageGraphs: 'UsageGraph',
         minNodeFraction: float = 0.01,
         minEdgeFraction: float = 0.05,
-        collapseLines: bool = True,
+        collapseNodes: bool = True,
     ) -> None:
         """Create a dot graph comparing multiple UsageGraphs, which usually correspond to multiple
         time snapshots. In the resulting graph, boxes will look like this:
@@ -149,6 +149,43 @@ class UsageGraph(NamedTuple):
         final line of code in this stack trace; cumulative usage == memory allocated at or below the
         final line of code in this stack trace)
 
+        This function is particularly useful for finding the causes of anomalous memory events. For
+        example, imagine that your program is having an overall memory usage spike; you can see this
+        on the time plot (which you made using Reader.asTotalUsagePlot), then pick three times --
+        before, during, and after the spike -- make usage graphs for all three, and plot them:
+
+            import heapprof
+            r = heapprof.Reader('myfile')
+            heapprof.UsageGraph.compare(
+                'compare.dot',
+                r.usageGraphAt(1000),  # A time before the spike
+                r.usageGraphAt(2000),  # A time in the middle of the spike
+                r.usageGraphAt(3000),  # A time after the spike
+            )
+
+        Then you view this with dot:
+
+            dot -Tpdf -o compare.pdf compare.dot
+
+        Each box on the graph will have three sizes in it, corresponding to the three timestamps;
+        those boxes are color-coded from red to blue (corresponding to what fraction of total memory
+        they take up at their respective timeslice), and the overall box is sized based on how much
+        memory is being allocated directly by that box (as opposed to things that box calls).
+
+        Starting from the top of the graph, there is a box marked "Program Root," whose cumulative
+        usage numbers are total memory usage at those times; perhaps they're 800MB, 2GB, 800MB.
+        Following the lines down, we see that in all cases, the majority of memory usage is along a
+        particular route, but the _fraction_ of cumulative memory usage used by various nodes during
+        the spike is different from the fraction in the before or after, while the before and after
+        tend to be pretty similar to each other.
+
+        In the nodes where the "during" >> the before or after, this is a sign that this is where
+        additional memory is being used. In the nodes where the during fraction << the before or
+        after, check the raw amounts rather than the ratios -- if the number hasn't changed, the
+        fraction will go down, and that's a sign that this node hasn't moved.
+
+        You now have an idea of where additional memory is being used during the spike.
+
         Args:
             dotFileName: The name of the file to which the output should be written.
             *usageGraphs: The sequence of graphs to compare.
@@ -160,5 +197,5 @@ class UsageGraph(NamedTuple):
                 list(usageGraphs),
                 minNodeFraction=minNodeFraction,
                 minEdgeFraction=minEdgeFraction,
-                collapseLines=collapseLines,
+                collapseNodes=collapseNodes,
             )
