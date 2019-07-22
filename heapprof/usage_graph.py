@@ -1,10 +1,7 @@
-import colorsys
-from collections import defaultdict
-from dataclasses import dataclass
-from typing import Dict, List, NamedTuple, TextIO, Tuple
+from typing import Dict, NamedTuple, TextIO, Tuple
 
-from ._si_prefix import bytesString
-from .types import RawTraceLine, Snapshot
+from ._usage_dot import makeDotFile
+from .types import RawTraceLine
 
 
 class UsageGraph(NamedTuple):
@@ -113,169 +110,55 @@ class UsageGraph(NamedTuple):
             collapseLines: If True, groups of trace lines that have no branching can get merged
                 into each other.
         """
-        if minNodeFraction < 0 or minNodeFraction > 1:
-            raise ValueError('minNodeFraction must be in [0, 1]')
-
-        minNodeSize = int(self.totalUsage * minNodeFraction)
-
-        if minEdgeFraction < 0 or minEdgeFraction > 1:
-            raise ValueError('minEdgeFraction must be in [0, 1]')
-
-        # Edges are colored by edge fraction; white is assigned to minEdgeFraction, black to
-        # max(minEdgeFraction, 0.5), and we do a linear gradient between those two points.
-        blackCutoff = max(minEdgeFraction, 0.5)
-        scaleDenom = 255 / (blackCutoff - minEdgeFraction) if blackCutoff > minEdgeFraction else 0
-
-        @dataclass
-        class NodeInfo:
-            cumSize: int
-            localSize: int
-            traceLines: List[RawTraceLine]
-
-        # Build the list of graph nodes
-        nodes: Dict[str, NodeInfo] = {}
-        for node, cumSize in self.nodeCumulativeUsage.items():
-            if cumSize < minNodeSize:
-                continue
-            nodes[self._nodeId(node)] = NodeInfo(cumSize, self.nodeLocalUsage.get(node, 0), [node])
-
-        # Build the connection list, from src node ID to end node ID + size
-        outgoingEdges: Dict[str, List[Tuple[str, int]]] = defaultdict(list)
-        incomingEdges: Dict[str, List[Tuple[str, int]]] = defaultdict(list)
-        for edge, edgeSize in self.edgeUsage.items():
-            src, dst = edge
-
-            srcId = self._nodeId(src)
-            if srcId not in nodes:
-                continue
-            dstId = self._nodeId(dst)
-            if dstId not in nodes:
-                continue
-
-            outgoingEdges[srcId].append((dstId, edgeSize))
-            incomingEdges[dstId].append((srcId, edgeSize))
-
-        # Next, collapse graph nodes. nodeMap will be a map from "old" (pre-collapse) to "new"
-        # (post-collapse) node ID's; absence means the node is unchanged.
-        nodeMap: Dict[str, str] = {}
-
-        if collapseLines:
-            for nodeId, nodeInfo in nodes.items():
-                # If a node has essentially no local contribution and one outgoing edge,
-                # and that child has only this as a parent, collapse those two nodes.
-                if nodeInfo.localSize >= 0.01 * nodeInfo.cumSize:
-                    continue
-                outEdges = outgoingEdges.get(nodeId, [])
-                if len(outEdges) != 1:
-                    continue
-
-                # We might want to collapse dstId into this node.
-                dstId, _ = outEdges[0]
-                dstId = nodeMap.get(dstId, dstId)
-
-                childInEdges = incomingEdges.get(dstId, [])
-                if len(childInEdges) != 1:
-                    continue
-
-                # If we get here, we want to collapse dstId into nodeId! Check if nodeId has already
-                # been remapped, too.
-                srcId = nodeMap.get(nodeId, nodeId)
-                srcInfo = nodes[srcId]
-
-                dstInfo = nodes[dstId]
-                nodeMap[dstId] = srcId
-
-                srcInfo.localSize += dstInfo.localSize
-                srcInfo.traceLines.extend(dstInfo.traceLines)
-
-        # Output
-        dotFile.write('digraph {\n')
-        dotFile.write('  node [shape="box" fontcolor="white" style="filled"];\n')
-        for nodeId, nodeInfo in nodes.items():
-            if nodeId in nodeMap:
-                continue
-
-            attrs: List[str] = []
-
-            label = [f'{x.filename}:{x.lineno}' for x in nodeInfo.traceLines]
-            label.append(f'{bytesString(nodeInfo.localSize)} / {bytesString(nodeInfo.cumSize)}')
-            labelString = '\n'.join(label)
-            attrs.append(f'label="{labelString}"')
-
-            # TODO: Right now, the size of a node is a function of its local size, and its color is
-            # a function of its cumulative size. Reversing these seeems less clear, but this still
-            # feels suboptimal from a UX perspective. Think about it more.
-            attrs.append(f'fontsize={self._fontSize(nodeInfo.localSize)}')
-            attrs.append(f'fillcolor="{self._color(nodeInfo.cumSize)}"')
-
-            dotFile.write(f'  {nodeId} [{" ".join(attrs)}];\n')
-
-        for srcId, dstIds in outgoingEdges.items():
-            srcId = nodeMap.get(srcId, srcId)
-            for dstId, edgeSize in dstIds:
-                dstId = nodeMap.get(dstId, dstId)
-
-                # Skip self-edges, which can happen when nodes are collapsed.
-                if srcId == dstId:
-                    continue
-
-                fracWeight = edgeSize / nodes[srcId].cumSize
-                if fracWeight < minEdgeFraction:
-                    continue
-
-                if fracWeight >= blackCutoff:
-                    color = 0
-                else:
-                    color = int((blackCutoff - fracWeight) * scaleDenom)
-
-                colorString = f'"#{color:02x}{color:02x}{color:02x}"'
-                attrs = [f'color={colorString}', f'label="{bytesString(edgeSize)}"']
-
-                dotFile.write(f'  {srcId} -> {dstId} [{" ".join(attrs)}];\n')
-
-        dotFile.write('}\n')
+        return makeDotFile(
+            dotFile,
+            [self],
+            minNodeFraction=minNodeFraction,
+            minEdgeFraction=minEdgeFraction,
+            collapseLines=collapseLines,
+        )
 
     def writeDotFile(self, filename: str, **kwargs) -> None:
         """Convenience helper for interactive analysis."""
         with open(filename, 'w') as output:
             self.asDotFile(output, **kwargs)
 
-    _MIN_FONT_SIZE = 15
-    _MAX_FONT_SIZE = 200
-    _SCALE_STARTS_AT = 0.01
+    @classmethod
+    def compare(
+        cls,
+        dotFileName: str,
+        *usageGraphs: 'UsageGraph',
+        minNodeFraction: float = 0.01,
+        minEdgeFraction: float = 0.05,
+        collapseLines: bool = True,
+    ) -> None:
+        """Create a dot graph comparing multiple UsageGraphs, which usually correspond to multiple
+        time snapshots. In the resulting graph, boxes will look like this:
 
-    _FONT_SCALE_CONSTANT = (_MAX_FONT_SIZE - _MIN_FONT_SIZE) / (1 - _SCALE_STARTS_AT)
+            |-------------------------------|
+            |  filename:line number         |
+            |  filename:line number         |
+            |-------------------------------|
+            | Loc/Cum  | Loc/Cum  | Loc/Cum |
+            |-------------------------------|
 
-    _MIN_HUE = 200 / 360
-    _MAX_HUE = 1
-    # _SATURATION = 0.52
-    _SATURATION = 0.7
-    _VALUE = 0.95
+        Here the sequence of filename:line numbers represents the segment of the stack trace
+        represented by this node (multiple lines are fused together if basically nothing interesting
+        happens between them), and for each "time stage" (parallel to the graphs we were passed) it
+        shows the local and cumulative usage at that node. (Local usage == memory allocated at the
+        final line of code in this stack trace; cumulative usage == memory allocated at or below the
+        final line of code in this stack trace)
 
-    def _nodeId(self, node: RawTraceLine) -> str:
-        return f'n{abs(hash(node)):016x}'
-
-    def _fontSize(self, localSize: int) -> int:
-        sizeFrac = localSize / self.totalUsage
-        return int(
-            self._MIN_FONT_SIZE
-            + max(0, (sizeFrac - self._SCALE_STARTS_AT)) * self._FONT_SCALE_CONSTANT
-        )
-
-    def _color(self, cumSize: int) -> str:
-        # The color of a node is a function of its cumulative size, from 170° (blue) at no size
-        # to 360° (red) at max size.
-        cumSizeFrac = cumSize / self.totalUsage
-        hue = self._MIN_HUE + (self._MAX_HUE - self._MIN_HUE) * cumSizeFrac
-        r, g, b = colorsys.hsv_to_rgb(hue, self._SATURATION, self._VALUE)
-        return f'#{self._colorAsHex(r)}{self._colorAsHex(g)}{self._colorAsHex(b)}'
-
-    def _colorAsHex(self, v: float) -> str:
-        return f'{int(255 * v):02x}'
-
-
-class UsageHistory(List[Tuple[Snapshot, UsageGraph]]):
-    """UsageHistory shows the complete timeline of usage for a heap profile."""
-
-    def __init__(self, *data: Tuple[Snapshot, UsageGraph]) -> None:
-        super().__init__(data)
+        Args:
+            dotFileName: The name of the file to which the output should be written.
+            *usageGraphs: The sequence of graphs to compare.
+            Other arguments: As for asDotGraph(), above.
+        """
+        with open(dotFileName, 'w') as output:
+            makeDotFile(
+                output,
+                list(usageGraphs),
+                minNodeFraction=minNodeFraction,
+                minEdgeFraction=minEdgeFraction,
+                collapseLines=collapseLines,
+            )

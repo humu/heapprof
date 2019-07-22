@@ -97,6 +97,13 @@ class HPM(object):
                 return scaleFactor
         return 1
 
+    def warmRawTraceCache(self) -> None:
+        """rawTrace() can be slow, because it may need to fetch traces out of the HPM file. Calling
+        this function forces that entire load to happen at once.
+        """
+        # This number is bigger than the biggest valid trace index.
+        self.rawTrace(1 << 31)
+
     ############################################################################################
     # Implementation details beyond this point.
 

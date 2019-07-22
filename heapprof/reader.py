@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Sequence, TextIO, Tuple, Union
 
 from .lowlevel import HPC, HPD, HPM
 from .types import HeapTrace, RawTrace, RawTraceLine, Snapshot
-from .usage_graph import UsageGraph, UsageHistory
+from .usage_graph import UsageGraph
 
 
 class Reader(object):
@@ -161,13 +161,6 @@ class Reader(object):
 
     def usageGraphAt(self, relativeTime: float) -> UsageGraph:
         return self.usageGraph(self.snapshotAt(relativeTime))
-
-    def usageHistory(self) -> UsageHistory:
-        """Returns the full usage history, which is basically (snapshot, usage graph) at every
-        snapshot. UsageHistory has methods that allow you to identify which parts of the code are
-        using memory at what time.
-        """
-        return UsageHistory((snapshot, self.usageGraph(snapshot)) for snapshot in self.snapshots())
 
     def asFlameGraph(self, snapshot: Snapshot, output: TextIO) -> None:
         """Write a snapshot in Brendan Gregg's "collapsed stack" format. This format can be
