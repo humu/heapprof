@@ -202,10 +202,10 @@ class UsageGraph(NamedTuple):
             labelString = '\n'.join(label)
             attrs.append(f'label="{labelString}"')
 
-            # The size of a node is a function of its local size
+            # TODO: Right now, the size of a node is a function of its local size, and its color is
+            # a function of its cumulative size. Reversing these seeems less clear, but this still
+            # feels suboptimal from a UX perspective. Think about it more.
             attrs.append(f'fontsize={self._fontSize(nodeInfo.localSize)}')
-            # The color of a node is a function of its cumulative size, from 200° (blue) at no size
-            # to 360° (red) at max size.
             attrs.append(f'fillcolor="{self._color(nodeInfo.cumSize)}"')
 
             dotFile.write(f'  {nodeId} [{" ".join(attrs)}];\n')
