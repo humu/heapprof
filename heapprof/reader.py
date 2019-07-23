@@ -1,6 +1,7 @@
 import math
 from collections import defaultdict
-from typing import Dict, List, NamedTuple, Optional, Sequence, TextIO, Tuple, Union
+from typing import (Dict, List, NamedTuple, Optional, Sequence, TextIO, Tuple,
+                    Union)
 
 from .lowlevel import HPC, HPD, HPM
 from .types import HeapTrace, RawTrace, RawTraceLine, Snapshot
@@ -263,7 +264,11 @@ class Reader(object):
 
             The scale is a scaling applied to byte quantities.
             """
-            import matplotlib.pyplot as plt
+            try:
+                import matplotlib.pyplot as plt
+            except ImportError:
+                raise ImportError('This functionality requires matplotlib. You can install it '
+                                  'with `pip install matplotlib`.')
 
             if self.lines:
                 # With lines requested -- show three plots, one of total usage, one of raw usage per
@@ -310,7 +315,7 @@ class Reader(object):
         """
         times: List[float] = []
         totalUsage: List[int] = []
-        lineValues: List[List[int]] = [[] for i in range(len(lines))]
+        lineValues: List[List[int]] = [[] for i in range(len(lines))] if lines else []
 
         labels = sorted(list(lines.keys()))
         traceLines = tuple(RawTraceLine.parse(lines[label]) for label in labels)
