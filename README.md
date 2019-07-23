@@ -51,16 +51,24 @@ r.makeDigest()
 # include that as a dependency, it would be needless bloat.
 import matplotlib.pyplot as plt
 _, ax = plt.subplots()
-ax.plot(*r.plotTotalUsage())
+ax.plot(*r.asTotalUsagePlot())
 plt.show()
 
 # Hmm, it looks from the plot like something interesting happened 350 seconds in. Let's get some
-# details. You can view "collapsed stack" files with tools like speedscope.app.
-r.writeCollapsedStack(350, 'flame-350.txt')
+# details.
+snapshot = r.snapshotAt(350)
+
+# You can view "collapsed stack" files with tools like speedscope.app.
+r.writeFlameGraph(snapshot, 'flame-350.txt')
+
+# Maybe you'd rather see this as a graph; those reveal different things than flame graphs, giving
+# better highlighting of memory sources but less vividness of stack traces. You can view the output
+# of this with graphviz.
+r.usageGraph(snapshot).writeDotFile('graph-350.dot')
 ```
 
 More options for these methods (and other ways to look at the data) can be found in the included
-Python methods.
+Python methods. There is extensive documentation in the .py files; check it out!
 
 **Tip:** Partially-written .hpd and .hpm files are valid; that means that you can do some analysis
 while your program is running. Also, if you ctrl-C while a digest is building, it will write a valid
@@ -202,9 +210,7 @@ the mailing list. We take this very seriously, and will enforce it gleefully.
 
 Some known future features that we'll probably want:
 
-* Replace the "top N stack traces" feature of HeapHistory with something more informative.
-* Provide additional file formats of output to work with other kinds of visualization, especially
-    graph visualizations similar to those created by pprof.
+* Provide additional file formats of output to work with other kinds of visualization.
 * Provide a nicer user flow for analyzing data.
 * Measure and tune system performance.
 * Make the process of picking sampling rates less manual.

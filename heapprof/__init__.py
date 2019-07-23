@@ -2,7 +2,11 @@ from typing import Dict, Optional
 
 import _heapprof
 
+# Types exposed as part of the API -- check out their .py files to learn more!
 from .reader import Reader  # noqa
+from .types import (HeapTrace, RawTrace, RawTraceLine, Snapshot,  # noqa
+                    TraceLine)
+from .usage_graph import UsageGraph  # noqa
 
 # This default sampling rate was determined through some trial and error. However, it may or may not
 # be the right one for any particular case.
