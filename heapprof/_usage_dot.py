@@ -25,6 +25,7 @@ def makeDotFile(
     minNodeFraction: float = 0.01,
     minEdgeFraction: float = 0.05,
     collapseNodes: bool = True,
+    sizeNodesBasedOnLocalUsage: bool = True,
 ) -> None:
     if minNodeFraction < 0 or minNodeFraction > 1:
         raise ValueError('minNodeFraction must be in [0, 1]')
@@ -38,7 +39,7 @@ def makeDotFile(
     nodeMap: Dict[str, str] = {}
     if collapseNodes:
         _collapseNodes(graphs, nodes, edges, nodeMap)
-    _render(output, graphs, nodes, edges, nodeMap, minEdgeFraction)
+    _render(output, graphs, nodes, edges, nodeMap, minEdgeFraction, sizeNodesBasedOnLocalUsage)
 
 
 def _nodeId(line: RawTraceLine) -> str:
@@ -56,6 +57,10 @@ _SCALE_STARTS_AT = 0.01
 
 _FONT_SCALE_CONSTANT = (_MAX_FONT_SIZE - _MIN_FONT_SIZE) / (1 - _SCALE_STARTS_AT)
 
+# Warning before you mess with these parameters: They are chosen specifically so that this range is
+# clearly distinguishable even with various types of color blindness. If you make any adjustments to
+# this, make sure to run the output through the COBLIS simulator at color-blindness.com, at least to
+# handle dichromatic views.
 _MIN_HUE = 200 / 360
 _MAX_HUE = 1
 _SATURATION = 0.7
@@ -102,9 +107,11 @@ class _NodeInfo(NamedTuple):
             # NB that we don't add up cumulative sizes, because those are already sums!
             mySize.localSize += theirSize.localSize
 
-    def fontSize(self, graphs: List['UsageGraph']) -> int:
+    def fontSize(self, graphs: List['UsageGraph'], usageSizing: bool) -> int:
         if len(graphs) != len(self.sizes):
             raise AssertionError(f'Unexpected: {len(graphs)} graphs but this node is {self}')
+        if not usageSizing:
+            return _MIN_FONT_SIZE
         return _fontSize(
             max(size.localSize / graph.totalUsage for size, graph in zip(self.sizes, graphs))
         )
@@ -150,17 +157,19 @@ def _makeNodes(graphs: List['UsageGraph'], minNodeFraction: float) -> Dict[str, 
     """Build the initial set of nodes."""
     result: Dict[str, _NodeInfo] = {}
     for index, graph in enumerate(graphs):
-        minNodeSize = minNodeFraction * graph.totalUsage
         for node, cumSize in graph.nodeCumulativeUsage.items():
-            if cumSize < minNodeSize:
-                continue
-
             nodeId = _nodeId(node)
             if nodeId not in result:
                 result[nodeId] = _NodeInfo([node], [_NodeSize() for i in range(len(graphs))])
 
             result[nodeId].sizes[index].cumSize = cumSize
             result[nodeId].sizes[index].localSize = graph.nodeLocalUsage.get(node, 0)
+
+    # Now prune tiny nodes -- but only do that now, once we know all their sizes.
+    minNodeSize = [minNodeFraction * graph.totalUsage for graph in graphs]
+    for nodeId, nodeInfo in list(result.items()):
+        if all(size.cumSize < minSize for size, minSize in zip(nodeInfo.sizes, minNodeSize)):
+            del result[nodeId]
 
     return result
 
@@ -306,6 +315,7 @@ def _render(
     edges: _NodeEdges,
     nodeMap: Dict[str, str],
     minEdgeFraction: float,
+    sizeNodesBasedOnLocalUsage: bool,
 ) -> None:
     output.write('digraph {\n')
     output.write('  node [shape=none margin=0]\n')
@@ -316,7 +326,8 @@ def _render(
             continue
 
         output.write(
-            f'  {nodeId} [fontsize={nodeInfo.fontSize(graphs)} label={nodeInfo.label(graphs)}]\n'
+            f'  {nodeId} [fontsize={nodeInfo.fontSize(graphs, sizeNodesBasedOnLocalUsage)} '
+            f'label={nodeInfo.label(graphs)}]\n'
         )
 
     # Edges are colored by edge fraction; white is assigned to minEdgeFraction, black to

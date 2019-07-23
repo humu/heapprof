@@ -1,4 +1,4 @@
-from typing import Dict, List, NamedTuple
+from typing import Dict, List, NamedTuple, Union
 
 
 class RawTraceLine(NamedTuple):
@@ -6,6 +6,19 @@ class RawTraceLine(NamedTuple):
 
     filename: str
     lineno: int
+
+    def __str__(self) -> str:
+        if self.lineno:
+            return f'{self.filename}:{self.lineno}'
+        else:
+            return self.filename
+
+    @classmethod
+    def parse(cls, value: Union['RawTraceLine', str]) -> 'RawTraceLine':
+        if isinstance(value, RawTraceLine):
+            return value
+        filename, linestr = value.rsplit(':', 1)
+        return cls(filename, int(linestr))
 
 
 # A RawTrace is the simplest form of a raw stack trace.

@@ -1,6 +1,6 @@
 import math
 from collections import defaultdict
-from typing import Dict, List, Optional, Sequence, TextIO, Tuple, Union
+from typing import Dict, List, NamedTuple, Optional, Sequence, TextIO, Tuple, Union
 
 from .lowlevel import HPC, HPD, HPM
 from .types import HeapTrace, RawTrace, RawTraceLine, Snapshot
@@ -119,6 +119,20 @@ class Reader(object):
     # speedscope, etc) which are deliberately not included in this package, to minimize dependency
     # bloat. See the comments on each method for how to connect them to visualization tools, or use
     # the underlying data methods to roll your own or do your own data hunting!
+    #
+    # Not sure how to start? A good way to begin is:
+    #   - First call r.asUsagePlot().pyplot() with no lines selected; this will give you a plot of
+    #     total memory usage over time.
+    #   - If there are interesting times, analyze memory usage at those times with your favorite of
+    #     writeFlameGraph() and usageGraphAt().writeDotFile(). Those are two complementary views of
+    #     the state of the world at any given moment.
+    #   - If you want to compare memory usage at a handful of times, construct a usageGraph for
+    #     each of those, then call UsageGraph.compare() to make a joint memory flow graph.
+    #   - If you're still looking, maybe you want to plot how some specific lines of code vary over
+    #     time. A good way to find those lines is to look at that comparison plot (or at an
+    #     individual flame or usage graph) and pick meaningful lines. On a usage graph, if several
+    #     lines of code were merged into a single node, pick the bottom one from that node to get
+    #     the most useful results. Then pass those back to asUsagePlot() and watch how they evolve.
 
     def usageGraph(self, snapshot: Snapshot) -> UsageGraph:
         """Compute a UsageGraph given a snapshot. See usage_graph.py for the details of what these
@@ -162,6 +176,13 @@ class Reader(object):
     def usageGraphAt(self, relativeTime: float) -> UsageGraph:
         return self.usageGraph(self.snapshotAt(relativeTime))
 
+    def compareTimes(self, dotFile: str, *relativeTimes: float, **kwargs) -> None:
+        """Generate a graph view of the comparison of a bunch of different time slices, and save the
+        result as a .dot file to the given name. See UsageGraph.compare() for the kwargs available.
+        """
+        graphs = tuple(self.usageGraphAt(t) for t in relativeTimes)
+        UsageGraph.compare(dotFile, *graphs, **kwargs)
+
     def asFlameGraph(self, snapshot: Snapshot, output: TextIO) -> None:
         """Write a snapshot in Brendan Gregg's "collapsed stack" format. This format can be
         visualized as a Flame graph with tools like speedscope.app. (NB that if you're using
@@ -194,30 +215,113 @@ class Reader(object):
         with open(filename, "w") as output:
             self.asCollapsedStack(when, output)
 
-    def asTotalUsagePlot(self, scale: int = 1 << 20) -> Tuple[List[float], List[float]]:
-        """Generate a curve of total usage over time. The result is a pair of parallel arrays (for
-        ease of handing to matplotlib); the first lists seconds since program start, the second
-        estimated total bytes used.
+    def fastGetUsage(
+        self, snapshot: Snapshot, lines: Tuple[RawTraceLine, ...], cumulative: bool = True
+    ) -> Tuple[Tuple[int, ...], int]:
+        """This is a function to quickly fetch usage numbers without computing full usage graphs.
+        Given a snapshot and a list of N raw trace lines, this will return an array with N+1
+        elements. The first N elements are the cumulative (or local) usage at the indicated trace
+        lines; the last element is the total usage for all trace lines.
+        """
+        data: Dict[RawTraceLine, int] = defaultdict(int)
+        total = 0
+        for traceindex, size in snapshot.usage.items():
+            total += size
+            rawTrace = self.rawTrace(traceindex)
+            if rawTrace is None:
+                continue
+            if not cumulative:
+                if rawTrace[-1] in lines:
+                    data[rawTrace[-1]] += size
+            else:
+                for line in lines:
+                    if line in rawTrace:
+                        data[line] += size
+        return (tuple(data[line] for line in lines), total)
+
+    class UsagePlot(NamedTuple):
+        # The output of asUsagePlot. All of the arrays below are parallel -- they have the same
+        # number of entries.
+
+        # A list of relative times, in seconds.
+        times: List[float]
+
+        # Total heap size at each time, in bytes.
+        totalUsage: List[int]
+
+        # For each line you requested, we return a list of values; the exact value returned depends
+        # on the parameters selected.
+        lines: List[List[int]]
+
+        # A list parallel not to times, but to lines, of names for each line.
+        labels: List[str]
+
+        def pyplot(self, scale: int = 1 << 20) -> None:
+            """Show this plot using pyplot. Note that this method will only work if you have
+            separately pip installed matplotlib; we deliberately don't add this, as it would create
+            a lot of dependency bloat!
+
+            The scale is a scaling applied to byte quantities.
+            """
+            import matplotlib.pyplot as plt
+
+            if self.lines:
+                # With lines requested -- show three plots, one of total usage, one of raw usage per
+                # line, one of the ratios.
+                _, (total, raw, frac) = plt.subplots(3, 1, sharex=True)
+                total.plot(self.times, [t / scale for t in self.totalUsage])
+
+                rawLines: List[List[int]] = []
+                for line in self.lines:
+                    rawLines.append(self.times)
+                    rawLines.append([v / scale for v in line])
+                raw.plot(*rawLines)
+
+                fracLines = []
+                for line in self.lines:
+                    fracLines.append(self.times)
+                    fracLines.append([d / t for d, t in zip(line, self.totalUsage)])
+                frac.plot(*fracLines)
+
+                plt.legend(self.labels)
+
+            else:
+                # No lines -- just show the total usage.
+                _, ax = plt.subplots()
+                ax.plot(self.times, self.totalUsage)
+
+            plt.show()
+
+    def asUsagePlot(
+        self,
+        lines: Optional[Dict[str, Union[str, RawTraceLine]]] = None,
+    ) -> 'Reader.UsagePlot':
+        """Sometimes, after you've looked at usage graphs and so on, you want to see how memory
+        usage in certain parts of the program is varying over time. This function helps you with
+        that.
 
         Args:
-            scale: A scaling factor to apply to the Y-axis. 1 << 20 would plot in MB, 1 << 30 in GB,
-                etc.
+            lines: If given, this is a map from display label to lines of code whose usage you
+                want to monitor. In this case, the output data will show memory usage at those
+                lines, in addition to overall usage by the program.
 
-        You can plot this (after pip install matplotlib) with
-
-            import matplotlib.pyplot as plt
-            _, ax = plt.subplots()
-            ax.plot(*reader.asTotalUsagePlot(1 << 30))
-            plt.show()
+                The lines may be specified either as RawTraceLine, or as "filename:lineno". This
+                latter form is provided for convenience while debugging.
         """
-        if not self.hpc:
-            raise RuntimeError("You must make a digest before you can plot usage.")
         times: List[float] = []
-        values: List[float] = []
-        for snapshot in self.hpc:
+        totalUsage: List[int] = []
+        lineValues: List[List[int]] = [[] for i in range(len(lines))]
+
+        labels = sorted(list(lines.keys()))
+        traceLines = tuple(RawTraceLine.parse(lines[label]) for label in labels)
+        for snapshot in self.snapshots():
             times.append(snapshot.relativeTime)
-            values.append(snapshot.totalUsage())
-        return (times, values)
+            data, total = self.fastGetUsage(snapshot, traceLines, cumulative=True)
+            totalUsage.append(total)
+            for lineValue, datum in zip(lineValues, data):
+                lineValue.append(datum)
+
+        return self.UsagePlot(times, totalUsage, lineValues, labels)
 
     ###########################################################################################
     # Implementation details

@@ -93,6 +93,7 @@ class UsageGraph(NamedTuple):
         minNodeFraction: float = 0.01,
         minEdgeFraction: float = 0.05,
         collapseNodes: bool = True,
+        sizeNodesBasedOnLocalUsage: bool = True,
     ) -> None:
         """Write out a UsageGraph as a dot graph. The result can be visualized using graphviz, with
         a command like
@@ -109,6 +110,9 @@ class UsageGraph(NamedTuple):
                 cumulative usage are dropped for visual clarity.
             collapseNodes: If True, groups of trace lines that have no branching can get merged
                 into each other.
+            sizeNodesBasedOnLocalUsage: If True, the visual size of nodes in the graph will be
+                increased for nodes that allocate memory themselves. This can draw the eye to
+                useful information in some circumstances, and distract it in others, so YMMV.
         """
         return makeDotFile(
             dotFile,
@@ -116,6 +120,7 @@ class UsageGraph(NamedTuple):
             minNodeFraction=minNodeFraction,
             minEdgeFraction=minEdgeFraction,
             collapseNodes=collapseNodes,
+            sizeNodesBasedOnLocalUsage=sizeNodesBasedOnLocalUsage,
         )
 
     def writeDotFile(self, filename: str, **kwargs) -> None:
@@ -131,6 +136,7 @@ class UsageGraph(NamedTuple):
         minNodeFraction: float = 0.01,
         minEdgeFraction: float = 0.05,
         collapseNodes: bool = True,
+        sizeNodesBasedOnLocalUsage: bool = True,
     ) -> None:
         """Create a dot graph comparing multiple UsageGraphs, which usually correspond to multiple
         time snapshots. In the resulting graph, boxes will look like this:
@@ -198,4 +204,5 @@ class UsageGraph(NamedTuple):
                 minNodeFraction=minNodeFraction,
                 minEdgeFraction=minEdgeFraction,
                 collapseNodes=collapseNodes,
+                sizeNodesBasedOnLocalUsage=sizeNodesBasedOnLocalUsage,
             )
