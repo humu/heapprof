@@ -58,3 +58,11 @@ def stop() -> None:
 def isProfiling() -> bool:
     """Test if the heap profiler is currently running."""
     return _heapprof.isProfiling()
+
+
+def read(filebase: str) -> Reader:
+    """Open a reader, and create a digest for it if needed."""
+    r = Reader(filebase)
+    if not r.hasDigest():
+        r.makeDigest(verbose=True)
+    return r

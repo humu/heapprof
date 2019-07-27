@@ -9,19 +9,19 @@ from ._si_prefix import bytesString
 from .types import RawTraceLine
 
 
-"""The internal logic of rendering a collection of 'UsageGraph's as a dot file. The idea is that
-we may receive multiple 'UsageGraph's, which represent different time slices of the same world,
+"""The internal logic of rendering a collection of 'FlowGraph's as a dot file. The idea is that
+we may receive multiple 'FlowGraph's, which represent different time slices of the same world,
 and we want to build a unified visual representation showing all three. See the comment on
-UsageGraph.compare() for an explanation of what the output will look like.
+FlowGraph.compare() for an explanation of what the output will look like.
 
 This logic is in a separate file simply for clarity for the reader, as it's hairy, nothing but
-implementation details, and might otherwise obscure the very important UsageGraph class.
+implementation details, and might otherwise obscure the very important FlowGraph class.
 """
 
 
 def makeDotFile(
     output: TextIO,
-    graphs: List['UsageGraph'],
+    graphs: List['FlowGraph'],
     minNodeFraction: float = 0.01,
     minEdgeFraction: float = 0.05,
     collapseNodes: bool = True,
@@ -107,7 +107,7 @@ class _NodeInfo(NamedTuple):
             # NB that we don't add up cumulative sizes, because those are already sums!
             mySize.localSize += theirSize.localSize
 
-    def fontSize(self, graphs: List['UsageGraph'], usageSizing: bool) -> int:
+    def fontSize(self, graphs: List['FlowGraph'], usageSizing: bool) -> int:
         if len(graphs) != len(self.sizes):
             raise AssertionError(f'Unexpected: {len(graphs)} graphs but this node is {self}')
         if not usageSizing:
@@ -116,7 +116,7 @@ class _NodeInfo(NamedTuple):
             max(size.localSize / graph.totalUsage for size, graph in zip(self.sizes, graphs))
         )
 
-    def label(self, graphs: List['UsageGraph']) -> str:
+    def label(self, graphs: List['FlowGraph']) -> str:
         """Construct a dot HTML label, given an array of total memory sizes at each graph."""
         if len(graphs) != len(self.sizes):
             raise AssertionError(f'Unexpected: {len(graphs)} graphs but this node is {self}')
@@ -153,7 +153,7 @@ class _NodeInfo(NamedTuple):
         return result.getvalue()
 
 
-def _makeNodes(graphs: List['UsageGraph'], minNodeFraction: float) -> Dict[str, _NodeInfo]:
+def _makeNodes(graphs: List['FlowGraph'], minNodeFraction: float) -> Dict[str, _NodeInfo]:
     """Build the initial set of nodes."""
     result: Dict[str, _NodeInfo] = {}
     for index, graph in enumerate(graphs):
@@ -189,7 +189,7 @@ class _NodeEdges(NamedTuple):
 
 
 def _makeEdges(
-    graphs: List['UsageGraph'], nodes: Dict[str, _NodeInfo], minEdgeFraction: float
+    graphs: List['FlowGraph'], nodes: Dict[str, _NodeInfo], minEdgeFraction: float
 ) -> _NodeEdges:
     """Build the initial set of edges. Returns a list of edge sets parallel to graphs.
     """
@@ -225,7 +225,7 @@ def _makeEdges(
 
 
 def _makeRootNode(
-    graphs: List['UsageGraph'], nodes: Dict[str, _NodeInfo], edges: _NodeEdges
+    graphs: List['FlowGraph'], nodes: Dict[str, _NodeInfo], edges: _NodeEdges
 ) -> None:
     """If there isn't already a unique root node to the graph, create a synthetic one that has the
     overall program usage data in it.
@@ -254,7 +254,7 @@ def _makeRootNode(
 
 
 def _collapseNodes(
-    graphs: List['UsageGraph'],
+    graphs: List['FlowGraph'],
     nodes: Dict[str, _NodeInfo],
     edges: _NodeEdges,
     nodeMap: Dict[str, str],
@@ -310,7 +310,7 @@ def _collapseNodes(
 # Rendering
 def _render(
     output: TextIO,
-    graphs: List['UsageGraph'],
+    graphs: List['FlowGraph'],
     nodes: Dict[str, _NodeInfo],
     edges: _NodeEdges,
     nodeMap: Dict[str, str],
