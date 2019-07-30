@@ -1,11 +1,11 @@
 from typing import Dict, NamedTuple, TextIO, Tuple
 
-from ._usage_dot import makeDotFile
+from ._flow_graph import makeDotFile
 from .types import RawTraceLine
 
 
-class UsageGraph(NamedTuple):
-    """A UsageGraph is one of the basic ways to analyze how memory was being used by a process at a
+class FlowGraph(NamedTuple):
+    """A FlowGraph is one of the basic ways to analyze how memory was being used by a process at a
     snapshot of time. If you've ever used a graph view of a CPU or memory profiler, this will be
     familiar. Essentially, you can imagine the state of the process as a moment as a directed graph,
     where each node represents a line of code at which either some memory was being allocated, or
@@ -54,7 +54,7 @@ class UsageGraph(NamedTuple):
     paths to a node; for example, in the diagram above, the A->C call path is much more significant
     than the B->C one!
 
-    You can also compare UsageGraphs computed at two different times, and this can give critical
+    You can also compare FlowGraphs computed at two different times, and this can give critical
     insight into time dependencies. For example, say that your program has a natural flow of data
     where data is allocated (say, read in from disk) at point A, processed through stages B, C, and
     D, then written to a buffer at line E, and the output finally committed to disk and deallocated
@@ -81,7 +81,7 @@ class UsageGraph(NamedTuple):
     can be invaluable in tracing down odd phenomena.
     """
 
-    # The best way to create a UsageGraph is with Reader.usageGraph().
+    # The best way to create a FlowGraph is with Reader.usageGraph().
     nodeLocalUsage: Dict[RawTraceLine, int]
     nodeCumulativeUsage: Dict[RawTraceLine, int]
     edgeUsage: Dict[Tuple[RawTraceLine, RawTraceLine], int]
@@ -95,7 +95,7 @@ class UsageGraph(NamedTuple):
         collapseNodes: bool = True,
         sizeNodesBasedOnLocalUsage: bool = True,
     ) -> None:
-        """Write out a UsageGraph as a dot graph. The result can be visualized using graphviz, with
+        """Write out a FlowGraph as a dot graph. The result can be visualized using graphviz, with
         a command like
 
             dot -T pdf -o foo.pdf foo.dot
@@ -132,13 +132,13 @@ class UsageGraph(NamedTuple):
     def compare(
         cls,
         dotFileName: str,
-        *usageGraphs: 'UsageGraph',
+        *usageGraphs: 'FlowGraph',
         minNodeFraction: float = 0.01,
         minEdgeFraction: float = 0.05,
         collapseNodes: bool = True,
         sizeNodesBasedOnLocalUsage: bool = True,
     ) -> None:
-        """Create a dot graph comparing multiple UsageGraphs, which usually correspond to multiple
+        """Create a dot graph comparing multiple FlowGraphs, which usually correspond to multiple
         time snapshots. In the resulting graph, boxes will look like this:
 
             |-------------------------------|
@@ -162,7 +162,7 @@ class UsageGraph(NamedTuple):
 
             import heapprof
             r = heapprof.Reader('myfile')
-            heapprof.UsageGraph.compare(
+            heapprof.FlowGraph.compare(
                 'compare.dot',
                 r.usageGraphAt(1000),  # A time before the spike
                 r.usageGraphAt(2000),  # A time in the middle of the spike

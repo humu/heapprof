@@ -3,9 +3,9 @@ from collections import defaultdict
 from typing import (Dict, List, NamedTuple, Optional, Sequence, TextIO, Tuple,
                     Union)
 
+from .flow_graph import FlowGraph
 from .lowlevel import HPC, HPD, HPM
 from .types import HeapTrace, RawTrace, RawTraceLine, Snapshot
-from .usage_graph import UsageGraph
 
 
 class Reader(object):
@@ -62,7 +62,17 @@ class Reader(object):
             self._openHPC()
 
     ###########################################################################################
-    # Some core access functions
+    # High-level API access to the profile
+    #
+    # These functions are the "high-level API" to the profile, which speaks in terms of Snapshots --
+    # the state of the heap as a function of time. If you want to do your own analysis, this is a
+    # great place to start. If you want to drill down to the level of individual alloc and free
+    # events, use the low-level API exposed by self.hpm and self.hpd.
+    #
+    # The analytics functions (after this section) provide even more high-level API, letting you
+    # look at things like graphs of program nodes programmatically. Anything the visualization tools
+    # let you display, they also let you analyze with code.
+
     def initialTime(self) -> float:
         """Return the time, in seconds since the epoch, when the program run started. This is useful
         if you want to compare this to logs data.
@@ -112,110 +122,6 @@ class Reader(object):
         index = max(0, min(math.floor(relativeTime / self.hpc.timeInterval), len(self.hpc) - 1))
         return self.hpc[index]
 
-    ###########################################################################################
-    # Analysis tools
-    # Note that while the below methods can produce the outputs needed to visualize the data in
-    # various ways (memory flow graphs, flame graphs, time plots, etc), none of them do the
-    # visualization themselves: those all require using separate tools (graphviz, matplotlib,
-    # speedscope, etc) which are deliberately not included in this package, to minimize dependency
-    # bloat. See the comments on each method for how to connect them to visualization tools, or use
-    # the underlying data methods to roll your own or do your own data hunting!
-    #
-    # Not sure how to start? A good way to begin is:
-    #   - First call r.asUsagePlot().pyplot() with no lines selected; this will give you a plot of
-    #     total memory usage over time.
-    #   - If there are interesting times, analyze memory usage at those times with your favorite of
-    #     writeFlameGraph() and usageGraphAt().writeDotFile(). Those are two complementary views of
-    #     the state of the world at any given moment.
-    #   - If you want to compare memory usage at a handful of times, construct a usageGraph for
-    #     each of those, then call UsageGraph.compare() to make a joint memory flow graph.
-    #   - If you're still looking, maybe you want to plot how some specific lines of code vary over
-    #     time. A good way to find those lines is to look at that comparison plot (or at an
-    #     individual flame or usage graph) and pick meaningful lines. On a usage graph, if several
-    #     lines of code were merged into a single node, pick the bottom one from that node to get
-    #     the most useful results. Then pass those back to asUsagePlot() and watch how they evolve.
-
-    def usageGraph(self, snapshot: Snapshot) -> UsageGraph:
-        """Compute a UsageGraph given a snapshot. See usage_graph.py for the details of what these
-        are and how they can be used for analysis; these are one of your best ways to both
-        visualize a snapshot or analyze time-dependence.
-
-        Use this method if you want a graph visualization of your data.
-
-        NB: The first call to usageGraph on a Reader may be a bit slow, because it has to load up
-        all the stack traces from the .hpm file; once that cache is warm, future reads will be much
-        faster.
-        """
-        nodeLocalUsage: Dict[RawTraceLine, int] = defaultdict(int)
-        nodeCumulativeUsage: Dict[RawTraceLine, int] = defaultdict(int)
-        edgeUsage: Dict[Tuple[RawTraceLine, RawTraceLine], int] = defaultdict(int)
-        totalUsage = 0
-
-        for traceindex, size in snapshot.usage.items():
-            totalUsage += size
-
-            # Grab the stack trace. If there is none, we only account for it in the total.
-            rawTrace = self.hpm.rawTrace(traceindex)
-            if rawTrace is None:
-                continue
-
-            traceLength = len(rawTrace)
-            for i in range(traceLength):
-                # nodeCumulativeUsage == total size of all stacks including this line.
-                nodeCumulativeUsage[rawTrace[i]] += size
-                # edgeUsage == total size of all edges containing (AB)
-                if i < traceLength - 1:
-                    edgeUsage[(rawTrace[i], rawTrace[i + 1])] += size
-                else:
-                    # nodeLocalUsage == total size of all stacks ending with this line.
-                    nodeLocalUsage[rawTrace[i]] += size
-
-        return UsageGraph(
-            dict(nodeLocalUsage), dict(nodeCumulativeUsage), dict(edgeUsage), totalUsage
-        )
-
-    def usageGraphAt(self, relativeTime: float) -> UsageGraph:
-        return self.usageGraph(self.snapshotAt(relativeTime))
-
-    def compareTimes(self, dotFile: str, *relativeTimes: float, **kwargs) -> None:
-        """Generate a graph view of the comparison of a bunch of different time slices, and save the
-        result as a .dot file to the given name. See UsageGraph.compare() for the kwargs available.
-        """
-        graphs = tuple(self.usageGraphAt(t) for t in relativeTimes)
-        UsageGraph.compare(dotFile, *graphs, **kwargs)
-
-    def asFlameGraph(self, snapshot: Snapshot, output: TextIO) -> None:
-        """Write a snapshot in Brendan Gregg's "collapsed stack" format. This format can be
-        visualized as a Flame graph with tools like speedscope.app. (NB that if you're using
-        speedscope, only the "left heavy" and "sandwich" views will make any sense; the "time
-        order" view is intended to show CPU profiles over time, which would be nonsensical
-        for this type of data)
-
-        For speedscope, see https://github.com/jlfwong/speedscope, or use the hosted version at
-        https://www.speedscope.app.
-        """
-        otherSize = 0
-        for traceindex, size in snapshot.usage.items():
-            trace = self.trace(traceindex)
-            if trace is None:
-                otherSize += size
-            else:
-                traceArray = [f"{line.filename}:{line.lineno}" for line in trace]
-                output.write(";".join(traceArray))
-                output.write(f" {size}\n")
-
-        if otherSize > 0:
-            output.write(f"OTHER {otherSize}\n")
-
-    def writeFlameGraph(self, when: Union[float, Snapshot], filename: str) -> None:
-        """Convenience helper: Grab a snapshot at a particular relative time, and write it in
-        collapsed stack format to filename.
-        """
-        if isinstance(when, float):
-            when = self.snapshotAt(when)
-        with open(filename, "w") as output:
-            self.asCollapsedStack(when, output)
-
     def fastGetUsage(
         self, snapshot: Snapshot, lines: Tuple[RawTraceLine, ...], cumulative: bool = True
     ) -> Tuple[Tuple[int, ...], int]:
@@ -240,8 +146,34 @@ class Reader(object):
                         data[line] += size
         return (tuple(data[line] for line in lines), total)
 
-    class UsagePlot(NamedTuple):
-        # The output of asUsagePlot. All of the arrays below are parallel -- they have the same
+    ###########################################################################################
+    # Analytics Functions
+    #
+    # These functions expose three different views of the data. If you don't want to write code to
+    # analyze your heap, and just want to pull out graphs, these are the way to go.
+    #
+    # If you don't know where to start, a good roadmap to analyzing your heap is:
+    #  - Call self.timePlot().pyplot() to see overall memory usage as a function of time.
+    #    You'll need to `pip install matplotlib` to view this.
+    #  - If there are any individual points in time you want to examine in detail, call
+    #    self.writeFlowGraph(time) or self.writeFlameGraph(time) to generate flow or flame
+    #    visualizations. (Different people prefer different ones) You'll need to install
+    #    graphviz (see graphviz.org) to view flow graphs, or use speedscope.app to view flame
+    #    graphs.
+    #  - If there are two or more points in time you'd like to compare, call
+    #    self.compareFlowGraphs() to generate a flow graph that shows you how memory usage has
+    #    shifted across the stack between times.
+    #  - If any of the above tools showed you particular lines of code whose usage you'd like
+    #    to see shift over time, call self.timePlot({...}).pyplot() to view that.
+    #
+    # All of these functions also let you access the data they display programmatically, which
+    # is part of the high-level API.
+
+    ###########################################################################################
+    # Time plots: These allow you to view the time dependence of memory usage, both overall and for
+    # individual lines of code.
+    class TimePlot(NamedTuple):
+        # The output of timePlot. All of the arrays below are parallel -- they have the same
         # number of entries.
 
         # A list of relative times, in seconds.
@@ -267,8 +199,10 @@ class Reader(object):
             try:
                 import matplotlib.pyplot as plt
             except ImportError:
-                raise ImportError('This functionality requires matplotlib. You can install it '
-                                  'with `pip install matplotlib`.')
+                raise ImportError(
+                    'This functionality requires matplotlib. You can install it '
+                    'with `pip install matplotlib`.'
+                )
 
             if self.lines:
                 # With lines requested -- show three plots, one of total usage, one of raw usage per
@@ -297,10 +231,9 @@ class Reader(object):
 
             plt.show()
 
-    def asUsagePlot(
-        self,
-        lines: Optional[Dict[str, Union[str, RawTraceLine]]] = None,
-    ) -> 'Reader.UsagePlot':
+    def timePlot(
+        self, lines: Optional[Dict[str, Union[str, RawTraceLine]]] = None
+    ) -> 'Reader.TimePlot':
         """Sometimes, after you've looked at usage graphs and so on, you want to see how memory
         usage in certain parts of the program is varying over time. This function helps you with
         that.
@@ -326,7 +259,119 @@ class Reader(object):
             for lineValue, datum in zip(lineValues, data):
                 lineValue.append(datum)
 
-        return self.UsagePlot(times, totalUsage, lineValues, labels)
+        return self.TimePlot(times, totalUsage, lineValues, labels)
+
+    ###########################################################################################
+    # Flow graphs
+    #
+    # A flow graph is a directed graph. Each node represents a line of code that shows up in a
+    # stack trace. (Or sometimes, multiple lines of code that are grouped together because they
+    # always show up in a single sequence in the stack trace; no reason to make graphs big)
+    #
+    # Each node has a local usage (how much memory was allocated by that line of code itself) and
+    # a cumulative usage (how much memory was allocated by that line of code or by any functions it
+    # called). Nodes are connected by edges that represent function calls; the weight of an edge is
+    # the amount of memory used by calls that followed that edge.
+    #
+    # Each FlowGraph object represents the graph at a single snapshot. You can make a dot file
+    # (which can be viewed with graphviz) out of a single flow graph, or you can compare multiple
+    # flow graphs in a single visualization using compareFlowGraphs().
+    #
+    # flow_graph.py has very detailed comments if you'd like to learn more.
+    def flowGraph(self, snapshot: Snapshot) -> FlowGraph:
+        """Compute a FlowGraph given a snapshot. See flow_graph.py for the details of what these
+        are and how they can be used for analysis; these are one of your best ways to both
+        visualize a snapshot or analyze time-dependence.
+
+        Use this method if you want a graph visualization of your data.
+
+        NB: The first call to flowGraph on a Reader may be a bit slow, because it has to load up
+        all the stack traces from the .hpm file; once that cache is warm, future reads will be much
+        faster.
+        """
+        nodeLocalUsage: Dict[RawTraceLine, int] = defaultdict(int)
+        nodeCumulativeUsage: Dict[RawTraceLine, int] = defaultdict(int)
+        edgeUsage: Dict[Tuple[RawTraceLine, RawTraceLine], int] = defaultdict(int)
+        totalUsage = 0
+
+        for traceindex, size in snapshot.usage.items():
+            totalUsage += size
+
+            # Grab the stack trace. If there is none, we only account for it in the total.
+            rawTrace = self.hpm.rawTrace(traceindex)
+            if rawTrace is None:
+                continue
+
+            traceLength = len(rawTrace)
+            for i in range(traceLength):
+                # nodeCumulativeUsage == total size of all stacks including this line.
+                nodeCumulativeUsage[rawTrace[i]] += size
+                # edgeUsage == total size of all edges containing (AB)
+                if i < traceLength - 1:
+                    edgeUsage[(rawTrace[i], rawTrace[i + 1])] += size
+                else:
+                    # nodeLocalUsage == total size of all stacks ending with this line.
+                    nodeLocalUsage[rawTrace[i]] += size
+
+        return FlowGraph(
+            dict(nodeLocalUsage), dict(nodeCumulativeUsage), dict(edgeUsage), totalUsage
+        )
+
+    def flowGraphAt(self, relativeTime: float) -> FlowGraph:
+        return self.flowGraph(self.snapshotAt(relativeTime))
+
+    def compareFlowGraphs(self, dotFile: str, *relativeTimes: float, **kwargs) -> None:
+        """Generate a graph view of the comparison of a bunch of different time slices, and save the
+        result as a .dot file to the given name. See FlowGraph.compare() for the kwargs available.
+        """
+        graphs = tuple(self.flowGraphAt(t) for t in relativeTimes)
+        FlowGraph.compare(dotFile, *graphs, **kwargs)
+
+    ###########################################################################################
+    # Flame graphs
+    #
+    # A flame graph visualizes memory usage as a sort of mountain range. Each vertical slice through
+    # the mountain range represents a single stack trace; the width of the slice indicates the
+    # amount of memory allocated by it. There are good interactive viewers for flame graphs, which
+    # let you click around and explore where the memory goes. A major difference between flow and
+    # flame graphs is that if a single line of code is called multiple times by different other
+    # sources, it will be unified in the flow graph, while the flame graph will show each call site
+    # as unrelated. This can be a pro or con, depending on the situation, so use both!
+
+    def flameGraph(self, snapshot: Snapshot, output: TextIO) -> None:
+        """Write a snapshot in Brendan Gregg's "collapsed stack" format. This format can be
+        visualized as a Flame graph with tools like speedscope.app. (NB that if you're using
+        speedscope, only the "left heavy" and "sandwich" views will make any sense; the "time
+        order" view is intended to show CPU profiles over time, which would be nonsensical
+        for this type of data)
+
+        For speedscope, see https://github.com/jlfwong/speedscope, or use the hosted version at
+        https://www.speedscope.app.
+        """
+        otherSize = 0
+        for traceindex, size in snapshot.usage.items():
+            trace = self.trace(traceindex)
+            if trace is None:
+                otherSize += size
+            else:
+                traceArray = [f"{line.filename}:{line.lineno}" for line in trace]
+                output.write(";".join(traceArray))
+                output.write(f" {size}\n")
+
+        if otherSize > 0:
+            output.write(f"OTHER {otherSize}\n")
+
+    def flameGraphAt(self, relativeTime: float, output: TextIO) -> None:
+        self.flameGraph(self.snapshotAt(relativeTime), output)
+
+    def writeFlameGraph(self, filename: str, when: Union[float, Snapshot]) -> None:
+        """Convenience helper: Grab a snapshot at a particular relative time, and write it in
+        collapsed stack format to filename.
+        """
+        if not isinstance(when, Snapshot):
+            when = self.snapshotAt(when)
+        with open(filename, "w") as output:
+            self.asFlameGraph(when, output)
 
     ###########################################################################################
     # Implementation details

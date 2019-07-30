@@ -3,10 +3,10 @@ from typing import Dict, Optional
 import _heapprof
 
 # Types exposed as part of the API -- check out their .py files to learn more!
-from .reader import Reader  # noqa
+from .flow_graph import FlowGraph  # noqa
+from .reader import Reader
 from .types import (HeapTrace, RawTrace, RawTraceLine, Snapshot,  # noqa
                     TraceLine)
-from .usage_graph import UsageGraph  # noqa
 
 # This default sampling rate was determined through some trial and error. However, it may or may not
 # be the right one for any particular case.
@@ -58,3 +58,11 @@ def stop() -> None:
 def isProfiling() -> bool:
     """Test if the heap profiler is currently running."""
     return _heapprof.isProfiling()
+
+
+def read(filebase: str) -> Reader:
+    """Open a reader, and create a digest for it if needed."""
+    r = Reader(filebase)
+    if not r.hasDigest():
+        r.makeDigest(verbose=True)
+    return r
