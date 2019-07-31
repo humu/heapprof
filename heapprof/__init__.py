@@ -60,9 +60,21 @@ def isProfiling() -> bool:
     return _heapprof.isProfiling()
 
 
-def read(filebase: str) -> Reader:
-    """Open a reader, and create a digest for it if needed."""
+def read(filebase: str, timeInterval: float = 60, precision: float = 0.01) -> Reader:
+    """Open a reader, and create a digest for it if needed.
+
+    Args:
+        filebase: The name of the file to open; the same as the argument passed to start().
+
+    Args which apply only if you're creating the digest (i.e., opening it for the first time):
+        timeInterval: The time interval between successive snapshots to store in the digest,
+            in seconds.
+        precision: At each snapshot, stack traces totalling up to this fraction of total
+            memory used at that frame may be dropped into the "other stack trace" bucket.
+            This can greatly shrink the size of the digest at no real cost in usefulness.
+            Must be in [0, 1); a value of zero means nothing is dropped.
+    """
     r = Reader(filebase)
     if not r.hasDigest():
-        r.makeDigest(verbose=True)
+        r.makeDigest(timeInterval=timeInterval, precision=precision, verbose=True)
     return r

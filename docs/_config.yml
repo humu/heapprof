@@ -1,1 +1,4 @@
 theme: jekyll-theme-minimal
+title: heapprof
+description: A logging, sampling heap profiler for Python
+show_downloads: true
