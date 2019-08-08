@@ -22,10 +22,7 @@ def addFileToList(filename: str, pyFiles: List[str], cppFiles: List[str]) -> Non
 
 
 def findFiles(
-    rootDir: str,
-    pyFiles: List[str],
-    cppFiles: List[str],
-    seenDirs: Optional[Set[str]] = None,
+    rootDir: str, pyFiles: List[str], cppFiles: List[str], seenDirs: Optional[Set[str]] = None
 ) -> None:
     """Find all Python and C++ files for us to lint."""
     seenDirs = seenDirs or set()
@@ -43,7 +40,7 @@ def findFiles(
 
 
 def runCommand(*command: str) -> bool:
-    pythonPath = ','.join(sys.path)
+    pythonPath = ':'.join(sys.path)
     try:
         subprocess.check_call([f'PYTHONPATH="{pythonPath}"', *command], cwd=REPO_ROOT, shell=True)
         return True

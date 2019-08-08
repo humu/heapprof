@@ -30,8 +30,7 @@ To understand where your memory is going, there are a few things you often want 
 
 heapprof has three built-in visualization tools to help with this: [time plots](#time-plots), [flow
 graphs](#flow-graphs), and [flame graphs](#flame-graphs). If you need to dig deeper, the
-[high-level](#the-high-level-api) and [low-level](#the-low-level-api) API's let you look at the
-numbers directly.
+[API's](#api-access-to-data) let you look at the numbers directly.
 
 ## Time Plots
 
@@ -241,4 +240,4 @@ of the high-level API; they're really implementation details) The `HPD` object i
     the total number of bytes that were being allocated or freed during that time.
 
 To go into more depth, continue on to [advanced heapprof](advanced_heapprof.md), or read about the
-[API](autodoc/_build/html/index.html) in depth.
+[API](api/index) in depth.

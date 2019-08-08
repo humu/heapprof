@@ -31,14 +31,14 @@ class FlowGraph(NamedTuple):
     node, the sum of all incoming edge weights is equal to the local weight of the node plus the sum
     of all outgoing edge weights -- i.e., it shows how much memory usage "flows through" that edge.
     For example, say that at a given point in time, our memory usage showed that memory had been
-    allocated at the following stack traces, where letters denote lines of code:
+    allocated at the following stack traces, where letters denote lines of code::
 
-    AD=16                    0/73 A---- 57       10 ----B 0/10
-    ACD=17                        |    ＼  24/67   /
-    ACE=19    == Graph ==>     16 |     ---> C <---
-    AC=21                         |         / ＼
-    BC=3                          v     24 /   ＼19
-    BCD=7                   40/40 D<-------     ------->E 19/19
+        AD=16                    0/73 A---- 57       10 ----B 0/10
+        ACD=17                        |    ＼  24/67   /
+        ACE=19    == Graph ==>     16 |     ---> C <---
+        AC=21                         |         / ＼
+        BC=3                          v     24 /   ＼19
+        BCD=7                   40/40 D<-------     ------->E 19/19
 
     The ASCII graph shows for each node, "local / cumulative", and for each edge, the edge weight.
     This means, for example, that node A allocated no memory itself, but 73 bytes of allocation
@@ -51,8 +51,8 @@ class FlowGraph(NamedTuple):
     node is proportional to its local size -- that lets you visually see exactly where most of the
     memory has been allocated at a glance, with line thicknesses (set by edge weight) showing you
     the primary flows of code which led there. That latter is important when there are multiple
-    paths to a node; for example, in the diagram above, the A->C call path is much more significant
-    than the B->C one!
+    paths to a node; for example, in the diagram above, the A→C call path is much more significant
+    than the B→C one!
 
     You can also compare FlowGraphs computed at two different times, and this can give critical
     insight into time dependencies. For example, say that your program has a natural flow of data
@@ -61,7 +61,7 @@ class FlowGraph(NamedTuple):
     at line F. Say also that at some moment in time, overall memory usage for your program spikes.
     If the before and after of the spike were both during this processing flow (as opposed to, say,
     "before the flow vs during the flow," in which case the problem would be obvious), it can be
-    very useful to compare the _fraction_ of total memory allocated at A, B, C, D, E, and F, as well
+    very useful to compare the *fraction* of total memory allocated at A, B, C, D, E, and F, as well
     as total memory usage T, during the before and during snapshots.
 
     For example, if the fractions for A-F were all roughly the same both before and during the
@@ -70,7 +70,7 @@ class FlowGraph(NamedTuple):
     F dropped during the spike, that would mean that less data (proportionally) was reaching them,
     which would imply that data was being held up at point C during the spike more than it was
     before -- a good hint as to where the problem might lie. Conversely, if fractional memory
-    usage at D, E, and F was _higher_ during the spike than before it, that might imply that D was
+    usage at D, E, and F was *higher* during the spike than before it, that might imply that D was
     generating more data than it was before, creating additional load on E and F. This
     interpretation would have to do with D being a processing stage; if memory usage at E alone were
     higher, that would imply that more memory was building up in the buffer during the spike, which
@@ -97,6 +97,8 @@ class FlowGraph(NamedTuple):
     ) -> None:
         """Write out a FlowGraph as a dot graph. The result can be visualized using graphviz, with
         a command like
+
+        ::
 
             dot -T pdf -o foo.pdf foo.dot
 
@@ -139,7 +141,7 @@ class FlowGraph(NamedTuple):
         sizeNodesBasedOnLocalUsage: bool = True,
     ) -> None:
         """Create a dot graph comparing multiple FlowGraphs, which usually correspond to multiple
-        time snapshots. In the resulting graph, boxes will look like this:
+        time snapshots. In the resulting graph, boxes will look like this::
 
             |-------------------------------|
             |  filename:line number         |
@@ -158,7 +160,7 @@ class FlowGraph(NamedTuple):
         This function is particularly useful for finding the causes of anomalous memory events. For
         example, imagine that your program is having an overall memory usage spike; you can see this
         on the time plot (which you made using Reader.asTotalUsagePlot), then pick three times --
-        before, during, and after the spike -- make usage graphs for all three, and plot them:
+        before, during, and after the spike -- make usage graphs for all three, and plot them::
 
             import heapprof
             r = heapprof.Reader('myfile')
@@ -169,7 +171,7 @@ class FlowGraph(NamedTuple):
                 r.usageGraphAt(3000),  # A time after the spike
             )
 
-        Then you view this with dot:
+        Then you view this with dot::
 
             dot -Tpdf -o compare.pdf compare.dot
 
@@ -181,13 +183,13 @@ class FlowGraph(NamedTuple):
         Starting from the top of the graph, there is a box marked "Program Root," whose cumulative
         usage numbers are total memory usage at those times; perhaps they're 800MB, 2GB, 800MB.
         Following the lines down, we see that in all cases, the majority of memory usage is along a
-        particular route, but the _fraction_ of cumulative memory usage used by various nodes during
+        particular route, but the *fraction* of cumulative memory usage used by various nodes during
         the spike is different from the fraction in the before or after, while the before and after
         tend to be pretty similar to each other.
 
-        In the nodes where the "during" >> the before or after, this is a sign that this is where
-        additional memory is being used. In the nodes where the during fraction << the before or
-        after, check the raw amounts rather than the ratios -- if the number hasn't changed, the
+        In the nodes where the "during" ≫ the "before" or "after," this is a sign that this is where
+        additional memory is being used. In the nodes where the "during" fraction ≪ the "before" or
+        "after," check the raw amounts rather than the ratios -- if the number hasn't changed, the
         fraction will go down, and that's a sign that this node hasn't moved.
 
         You now have an idea of where additional memory is being used during the spike.

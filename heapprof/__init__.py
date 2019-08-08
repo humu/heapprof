@@ -22,10 +22,9 @@ def start(filebase: str, samplingRate: Optional[Dict[int, float]] = None) -> Non
             performance reasons.
         samplingRate: A dict from byte size to sampling probability. Each byte size is interpreted
             as the upper bound of the range, and the sampling probability for byte sizes larger than
-            the largest range given is always 1; thus the default value means:
-                Profile allocations of 1-127 bytes at 1 in 10,000
-                Profile allocations of 128-8191 bytes at 1 in 10
-                Profile all allocations of 8192 or more bytes
+            the largest range given is always 1; thus the default value means to profile allocations
+            of 1-127 bytes at 1 in 10,000, to profile allocations of 128-8,191 bytes at 1 in 10, and
+            to profile all allocations of 8,192 bytes or more.
 
     Raises:
         TypeError: If samplingRate is not a mapping of the appropriate type.
@@ -47,8 +46,7 @@ def gatherStats() -> None:
 
 
 def stop() -> None:
-    """
-    Stop the heap profiler.
+    """Stop the heap profiler.
 
     NB that if the program exits, this will be implicitly called.
     """

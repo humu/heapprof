@@ -1,0 +1,6 @@
+# Config file for Jekyll serving. This just points it at the docs constructed by Sphinx, because
+# Sphinx can do fancy things like autogenerating docs from docstrings.
+source: docs/build/html
+include:
+  - /_static
+  - /_images

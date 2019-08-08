@@ -2,7 +2,7 @@
 
 The basic flow of using heapprof is:
 
-1. [Optional] Adjust parameters like the [sampling rate](sampling_rate.md).
+1. [Optional] Adjust parameters like the [sampling rate](advanced_heapprof.md#controlling-sampling).
 1. Run your program with heapprof turned on. This generates .hpm (metadata) and .hpd (data) files.
 1. Open the output files with `heapprof.read()` and create a .hpc (digest) file.
 1. Analyze the resulting data with visualization tools, or do your own poking with the API.
@@ -86,7 +86,8 @@ import heapprof
 r = heapprof.read('/output/file')
 ```
 
-This function returns a `heapprof.Reader`, which is your main interface to all the data. XXX LINK
+This function returns a [`heapprof.Reader`](api/reader), which is your main interface to all
+the data.
 
 Once you have a reader and a digest, you can start [visualizing and interpreting the
 results](visualizing_results.md).

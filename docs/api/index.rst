@@ -6,12 +6,7 @@ The heapprof API
    :caption: Contents:
 
    heapprof
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   reader
+   types
+   flow_graph
+   lowlevel
