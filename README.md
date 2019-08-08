@@ -17,4 +17,4 @@ slightly lower overhead, but you have to know the moments at which you'll want a
 program starts. This makes it particularly useful for finding leaks (from the snapshot at program
 exit), but not as good for understanding events like memory spikes.
 
-You can read all the documentation [here](docs/README.md)
+You can read all the documentation [here](docs/README.md).

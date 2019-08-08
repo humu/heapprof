@@ -108,4 +108,3 @@ Some tips for choosing a good sampling rate:
     low for larger byte sizes.
 * The only reason you want to keep the sampling rate low is for performance; if at any point you can
     get away with a bigger sampling rate, err on that side.
-

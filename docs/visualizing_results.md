@@ -240,4 +240,5 @@ of the high-level API; they're really implementation details) The `HPD` object i
     number is a multiplicative scale factor which you should apply to `size` to get an estimate of
     the total number of bytes that were being allocated or freed during that time.
 
-To go into more depth, continue on to [advanced heapprof](advanced_heapprof.md).
+To go into more depth, continue on to [advanced heapprof](advanced_heapprof.md), or read about the
+[API](autodoc/_build/html/index.html) in depth.
