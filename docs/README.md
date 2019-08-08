@@ -34,10 +34,8 @@ exit), but not as good for understanding events like memory spikes.
   * [API access to data](visualizing_results.md#api-access-to-data)
 * [Advanced heapprof](advanced_heapprof.md)
   * [Controlling sampling](advanced_heapprof.md#controlling-sampling)
-  * [File formats](advanced_heapprof.md#file-formats)
-  * [API reference](api_reference.md)
-* [Extending heapprof](extending_heapprof.md)
-  * [Contributing](contributing.md)
+* [API reference](autodoc/_build/html/index.html)
+* [Contributing](contributing.md)
   * [The code of conduct](../CODE_OF_CONDUCT.md)
   * [The MIT license](../LICENSE)
 

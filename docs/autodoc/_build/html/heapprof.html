@@ -1,0 +1,798 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>heapprof package &#8212; heapprof  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="The heapprof API" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-heapprof">
+<span id="heapprof-package"></span><h1>heapprof package<a class="headerlink" href="#module-heapprof" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="heapprof.gatherStats">
+<code class="sig-prename descclassname">heapprof.</code><code class="sig-name descname">gatherStats</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.gatherStats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start heapprof in stats gathering mode.</p>
+<p>When the profiler is stopped, this will print out statistics on the size distribution of memory
+allocations. This can be useful for choosing sampling rates for profiling.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="heapprof.isProfiling">
+<code class="sig-prename descclassname">heapprof.</code><code class="sig-name descname">isProfiling</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#heapprof.isProfiling" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test if the heap profiler is currently running.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="heapprof.read">
+<code class="sig-prename descclassname">heapprof.</code><code class="sig-name descname">read</code><span class="sig-paren">(</span><em class="sig-param">filebase: str</em>, <em class="sig-param">timeInterval: float = 60</em>, <em class="sig-param">precision: float = 0.01</em><span class="sig-paren">)</span> &#x2192; heapprof.reader.Reader<a class="headerlink" href="#heapprof.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open a reader, and create a digest for it if needed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filebase</strong> – The name of the file to open; the same as the argument passed to start().</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Args which apply only if you’re creating the digest (i.e., opening it for the first time):</dt><dd><dl class="simple">
+<dt>timeInterval: The time interval between successive snapshots to store in the digest,</dt><dd><p>in seconds.</p>
+</dd>
+<dt>precision: At each snapshot, stack traces totalling up to this fraction of total</dt><dd><p>memory used at that frame may be dropped into the “other stack trace” bucket.
+This can greatly shrink the size of the digest at no real cost in usefulness.
+Must be in [0, 1); a value of zero means nothing is dropped.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="heapprof.start">
+<code class="sig-prename descclassname">heapprof.</code><code class="sig-name descname">start</code><span class="sig-paren">(</span><em class="sig-param">filebase: str</em>, <em class="sig-param">samplingRate: Optional[Dict[int</em>, <em class="sig-param">float]] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start heapprof in profiling (normal) mode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filebase</strong> – The outputs will be written to filebase.{hpm, hpd}, a pair of local files which
+can later be read using the HeapProfile class. NB that these must be local files for
+performance reasons.</p></li>
+<li><p><strong>samplingRate</strong> – <p>A dict from byte size to sampling probability. Each byte size is interpreted
+as the upper bound of the range, and the sampling probability for byte sizes larger than
+the largest range given is always 1; thus the default value means:</p>
+<blockquote>
+<div><p>Profile allocations of 1-127 bytes at 1 in 10,000
+Profile allocations of 128-8191 bytes at 1 in 10
+Profile all allocations of 8192 or more bytes</p>
+</div></blockquote>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError</strong> – If samplingRate is not a mapping of the appropriate type.</p></li>
+<li><p><strong>ValueError</strong> – If samplingRate contains repeated entries.</p></li>
+<li><p><strong>RuntimeError</strong> – If the profiler is already running.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="heapprof.stop">
+<code class="sig-prename descclassname">heapprof.</code><code class="sig-name descname">stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop the heap profiler.</p>
+<p>NB that if the program exits, this will be implicitly called.</p>
+</dd></dl>
+
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-heapprof.flow_graph">
+<span id="heapprof-flow-graph-module"></span><h2>heapprof.flow_graph module<a class="headerlink" href="#module-heapprof.flow_graph" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="heapprof.flow_graph.FlowGraph">
+<em class="property">class </em><code class="sig-prename descclassname">heapprof.flow_graph.</code><code class="sig-name descname">FlowGraph</code><a class="headerlink" href="#heapprof.flow_graph.FlowGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>A FlowGraph is one of the basic ways to analyze how memory was being used by a process at a
+snapshot of time. If you’ve ever used a graph view of a CPU or memory profiler, this will be
+familiar. Essentially, you can imagine the state of the process as a moment as a directed graph,
+where each node represents a line of code at which either some memory was being allocated, or
+some other function was being called.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>The “local usage” at a node is the amount of memory that has been allocated at that
+precise line of code. It is, of course, nonzero only for lines that actually allocate
+memory, and the sum of local usage over all nodes is the total memory usage. In terms of
+stack traces, it’s the total allocation at all stack traces which <em>end</em> at this particular
+line of code.</p></li>
+<li><p>The “cumulative usage” for a node is the amount of memory that is allocated by this node,
+and by all lines called from it. It is, therefore, going to be largest at the top of the
+graph, and if there’s a single root line of code (which there is iff the program is
+single-threaded), the cumulative usage for the topmost node is equal to the total usage of
+the program. In terms of stack traces, it’s the total allocation at all stack traces which
+<em>contain</em> this particular line of code.</p></li>
+<li><p>The weight of an edge between two lines of code A and B is the total amount of memory
+allocated by operations that go from A directly to B in their stack trace – that is, it’s
+the total allocation of stack traces which contain the sequence “AB” with nothing in
+between.</p></li>
+</ul>
+</div></blockquote>
+<p>Why is this definition of an edge weight useful? Because it has the nice property that for any
+node, the sum of all incoming edge weights is equal to the local weight of the node plus the sum
+of all outgoing edge weights – i.e., it shows how much memory usage “flows through” that edge.
+For example, say that at a given point in time, our memory usage showed that memory had been
+allocated at the following stack traces, where letters denote lines of code:</p>
+<p>AD=16                    0/73 A—- 57       10 —-B 0/10
+ACD=17                        |    ＼  24/67   /
+ACE=19    == Graph ==&gt;     16 |     —&gt; C &lt;—
+AC=21                         |         / ＼
+BC=3                          v     24 /   ＼19
+BCD=7                   40/40 D&lt;——-     ——-&gt;E 19/19</p>
+<p>The ASCII graph shows for each node, “local / cumulative”, and for each edge, the edge weight.
+This means, for example, that node A allocated no memory itself, but 73 bytes of allocation
+stream from it; those divide up into 16 via calls from A directly to D, and the other 57 in
+calls from A to C. Node C, on the other hand, directly allocates 24 bytes, and indirectly
+another 24 in calls to D and 19 in calls to E. Most of the immediate allocation of memory
+happens at D, which directly allocates 40 bytes.</p>
+<p>In the most useful visual representation, these are output as a graph, where the size of each
+node is proportional to its local size – that lets you visually see exactly where most of the
+memory has been allocated at a glance, with line thicknesses (set by edge weight) showing you
+the primary flows of code which led there. That latter is important when there are multiple
+paths to a node; for example, in the diagram above, the A-&gt;C call path is much more significant
+than the B-&gt;C one!</p>
+<p>You can also compare FlowGraphs computed at two different times, and this can give critical
+insight into time dependencies. For example, say that your program has a natural flow of data
+where data is allocated (say, read in from disk) at point A, processed through stages B, C, and
+D, then written to a buffer at line E, and the output finally committed to disk and deallocated
+at line F. Say also that at some moment in time, overall memory usage for your program spikes.
+If the before and after of the spike were both during this processing flow (as opposed to, say,
+“before the flow vs during the flow,” in which case the problem would be obvious), it can be
+very useful to compare the _fraction_ of total memory allocated at A, B, C, D, E, and F, as well
+as total memory usage T, during the before and during snapshots.</p>
+<p>For example, if the fractions for A-F were all roughly the same both before and during the
+memory spike, this would tell you that during the spike, a lot more data is being read in, but
+the rest of the flow is proceeding as usual. If, on the other hand, the fractions for D, E, and
+F dropped during the spike, that would mean that less data (proportionally) was reaching them,
+which would imply that data was being held up at point C during the spike more than it was
+before – a good hint as to where the problem might lie. Conversely, if fractional memory
+usage at D, E, and F was _higher_ during the spike than before it, that might imply that D was
+generating more data than it was before, creating additional load on E and F. This
+interpretation would have to do with D being a processing stage; if memory usage at E alone were
+higher, that would imply that more memory was building up in the buffer during the spike, which
+might imply that the buffer’s draining at F was not functioning – perhaps the spike was caused
+by a problem in writing the data back out to disk?</p>
+<p>While there isn’t a completely generic tool for doing this analysis, this kind of information
+can be invaluable in tracing down odd phenomena.</p>
+<dl class="method">
+<dt id="heapprof.flow_graph.FlowGraph.asDotFile">
+<code class="sig-name descname">asDotFile</code><span class="sig-paren">(</span><em class="sig-param">dotFile: TextIO</em>, <em class="sig-param">minNodeFraction: float = 0.01</em>, <em class="sig-param">minEdgeFraction: float = 0.05</em>, <em class="sig-param">collapseNodes: bool = True</em>, <em class="sig-param">sizeNodesBasedOnLocalUsage: bool = True</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.flow_graph.FlowGraph.asDotFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write out a FlowGraph as a dot graph. The result can be visualized using graphviz, with
+a command like</p>
+<blockquote>
+<div><p>dot -T pdf -o foo.pdf foo.dot</p>
+</div></blockquote>
+<p>See www.graphviz.org for where you can get graphviz for your system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dotFile</strong> – Where the data should be written.</p></li>
+<li><p><strong>minNodeFraction</strong> – Nodes whose local size is less than this fraction of total usage
+are dropped for visual clarity.</p></li>
+<li><p><strong>minEdgeFraction</strong> – Edges whose size is less than this fraction of their source node’s
+cumulative usage are dropped for visual clarity.</p></li>
+<li><p><strong>collapseNodes</strong> – If True, groups of trace lines that have no branching can get merged
+into each other.</p></li>
+<li><p><strong>sizeNodesBasedOnLocalUsage</strong> – If True, the visual size of nodes in the graph will be
+increased for nodes that allocate memory themselves. This can draw the eye to
+useful information in some circumstances, and distract it in others, so YMMV.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.flow_graph.FlowGraph.compare">
+<em class="property">classmethod </em><code class="sig-name descname">compare</code><span class="sig-paren">(</span><em class="sig-param">dotFileName: str</em>, <em class="sig-param">*usageGraphs</em>, <em class="sig-param">minNodeFraction: float = 0.01</em>, <em class="sig-param">minEdgeFraction: float = 0.05</em>, <em class="sig-param">collapseNodes: bool = True</em>, <em class="sig-param">sizeNodesBasedOnLocalUsage: bool = True</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.flow_graph.FlowGraph.compare" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a dot graph comparing multiple FlowGraphs, which usually correspond to multiple
+time snapshots. In the resulting graph, boxes will look like this:</p>
+<blockquote>
+<div><p><a href="#id1"><span class="problematic" id="id2">|-------------------------------|</span></a>
+|  filename:line number         |
+|  filename:line number         |
+<a href="#id3"><span class="problematic" id="id4">|-------------------------------|</span></a>
+| Loc/Cum  | Loc/Cum  | Loc/Cum |
+<a href="#id5"><span class="problematic" id="id6">|-------------------------------|</span></a></p>
+</div></blockquote>
+<p>Here the sequence of filename:line numbers represents the segment of the stack trace
+represented by this node (multiple lines are fused together if basically nothing interesting
+happens between them), and for each “time stage” (parallel to the graphs we were passed) it
+shows the local and cumulative usage at that node. (Local usage == memory allocated at the
+final line of code in this stack trace; cumulative usage == memory allocated at or below the
+final line of code in this stack trace)</p>
+<p>This function is particularly useful for finding the causes of anomalous memory events. For
+example, imagine that your program is having an overall memory usage spike; you can see this
+on the time plot (which you made using Reader.asTotalUsagePlot), then pick three times –
+before, during, and after the spike – make usage graphs for all three, and plot them:</p>
+<blockquote>
+<div><p>import heapprof
+r = heapprof.Reader(‘myfile’)
+heapprof.FlowGraph.compare(</p>
+<blockquote>
+<div><p>‘compare.dot’,
+r.usageGraphAt(1000),  # A time before the spike
+r.usageGraphAt(2000),  # A time in the middle of the spike
+r.usageGraphAt(3000),  # A time after the spike</p>
+</div></blockquote>
+<p>)</p>
+</div></blockquote>
+<p>Then you view this with dot:</p>
+<blockquote>
+<div><p>dot -Tpdf -o compare.pdf compare.dot</p>
+</div></blockquote>
+<p>Each box on the graph will have three sizes in it, corresponding to the three timestamps;
+those boxes are color-coded from red to blue (corresponding to what fraction of total memory
+they take up at their respective timeslice), and the overall box is sized based on how much
+memory is being allocated directly by that box (as opposed to things that box calls).</p>
+<p>Starting from the top of the graph, there is a box marked “Program Root,” whose cumulative
+usage numbers are total memory usage at those times; perhaps they’re 800MB, 2GB, 800MB.
+Following the lines down, we see that in all cases, the majority of memory usage is along a
+particular route, but the _fraction_ of cumulative memory usage used by various nodes during
+the spike is different from the fraction in the before or after, while the before and after
+tend to be pretty similar to each other.</p>
+<p>In the nodes where the “during” &gt;&gt; the before or after, this is a sign that this is where
+additional memory is being used. In the nodes where the during fraction &lt;&lt; the before or
+after, check the raw amounts rather than the ratios – if the number hasn’t changed, the
+fraction will go down, and that’s a sign that this node hasn’t moved.</p>
+<p>You now have an idea of where additional memory is being used during the spike.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dotFileName</strong> – The name of the file to which the output should be written.</p></li>
+<li><p><strong>*usageGraphs</strong> – The sequence of graphs to compare.</p></li>
+<li><p><strong>arguments</strong> (<em>Other</em>) – As for asDotGraph(), above.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.flow_graph.FlowGraph.edgeUsage">
+<em class="property">property </em><code class="sig-name descname">edgeUsage</code><a class="headerlink" href="#heapprof.flow_graph.FlowGraph.edgeUsage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.flow_graph.FlowGraph.nodeCumulativeUsage">
+<em class="property">property </em><code class="sig-name descname">nodeCumulativeUsage</code><a class="headerlink" href="#heapprof.flow_graph.FlowGraph.nodeCumulativeUsage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.flow_graph.FlowGraph.nodeLocalUsage">
+<em class="property">property </em><code class="sig-name descname">nodeLocalUsage</code><a class="headerlink" href="#heapprof.flow_graph.FlowGraph.nodeLocalUsage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.flow_graph.FlowGraph.totalUsage">
+<em class="property">property </em><code class="sig-name descname">totalUsage</code><a class="headerlink" href="#heapprof.flow_graph.FlowGraph.totalUsage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.flow_graph.FlowGraph.writeDotFile">
+<code class="sig-name descname">writeDotFile</code><span class="sig-paren">(</span><em class="sig-param">filename: str</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.flow_graph.FlowGraph.writeDotFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience helper for interactive analysis.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-heapprof.lowlevel">
+<span id="heapprof-lowlevel-module"></span><h2>heapprof.lowlevel module<a class="headerlink" href="#module-heapprof.lowlevel" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="heapprof.lowlevel.HPC">
+<em class="property">class </em><code class="sig-prename descclassname">heapprof.lowlevel.</code><code class="sig-name descname">HPC</code><span class="sig-paren">(</span><em class="sig-param">filebase: str</em>, <em class="sig-param">hpm: Optional[heapprof.lowlevel.HPM] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#heapprof.lowlevel.HPC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequence</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">typing.Generic</span></code></p>
+<p>HPC is the low-level interface to .hpc files.</p>
+<dl class="method">
+<dt id="heapprof.lowlevel.HPC.make">
+<em class="property">classmethod </em><code class="sig-name descname">make</code><span class="sig-paren">(</span><em class="sig-param">filebase: str</em>, <em class="sig-param">timeInterval: float</em>, <em class="sig-param">precision: float</em>, <em class="sig-param">verbose: bool</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.lowlevel.HPC.make" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a .hpc file out of a .hpm and .hpd file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filebase</strong> – The name of the hpx file to process.</p></li>
+<li><p><strong>timeInterval</strong> – The gap between consecutive snapshots, in seconds.</p></li>
+<li><p><strong>precision</strong> – The fraction of total bytes at any snapshot which can be stuffed into the
+“other” bin. Must be a number in [0, 1).</p></li>
+<li><p><strong>verbose</strong> – If set, prints out a lot of state to stderr.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="heapprof.lowlevel.HPD">
+<em class="property">class </em><code class="sig-prename descclassname">heapprof.lowlevel.</code><code class="sig-name descname">HPD</code><span class="sig-paren">(</span><em class="sig-param">filebase: str</em>, <em class="sig-param">hpm: Optional[heapprof.lowlevel.HPM] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#heapprof.lowlevel.HPD" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Iterable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">typing.Generic</span></code></p>
+<p>HPD is the low-level interface to a .hpd file.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="heapprof.lowlevel.HPDEvent">
+<em class="property">class </em><code class="sig-prename descclassname">heapprof.lowlevel.</code><code class="sig-name descname">HPDEvent</code><a class="headerlink" href="#heapprof.lowlevel.HPDEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>A single event stored in a .hpd file.</p>
+<dl class="method">
+<dt id="heapprof.lowlevel.HPDEvent.scaleFactor">
+<em class="property">property </em><code class="sig-name descname">scaleFactor</code><a class="headerlink" href="#heapprof.lowlevel.HPDEvent.scaleFactor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.lowlevel.HPDEvent.size">
+<em class="property">property </em><code class="sig-name descname">size</code><a class="headerlink" href="#heapprof.lowlevel.HPDEvent.size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.lowlevel.HPDEvent.timestamp">
+<em class="property">property </em><code class="sig-name descname">timestamp</code><a class="headerlink" href="#heapprof.lowlevel.HPDEvent.timestamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.lowlevel.HPDEvent.traceindex">
+<em class="property">property </em><code class="sig-name descname">traceindex</code><a class="headerlink" href="#heapprof.lowlevel.HPDEvent.traceindex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="heapprof.lowlevel.HPM">
+<em class="property">class </em><code class="sig-prename descclassname">heapprof.lowlevel.</code><code class="sig-name descname">HPM</code><span class="sig-paren">(</span><em class="sig-param">filebase: str</em><span class="sig-paren">)</span><a class="headerlink" href="#heapprof.lowlevel.HPM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>HPM is the low-level interface to the .hpm file format.</p>
+<dl class="method">
+<dt id="heapprof.lowlevel.HPM.initialTime">
+<em class="property">property </em><code class="sig-name descname">initialTime</code><a class="headerlink" href="#heapprof.lowlevel.HPM.initialTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the initial time of the profile.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.lowlevel.HPM.rawTrace">
+<code class="sig-name descname">rawTrace</code><span class="sig-paren">(</span><em class="sig-param">traceindex: int</em><span class="sig-paren">)</span> &#x2192; Optional[List[heapprof.types.RawTraceLine]]<a class="headerlink" href="#heapprof.lowlevel.HPM.rawTrace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a traceindex (of the sort found in an HPDEvent), find the corresponding raw stack
+trace. Returns None if there is no known trace for this traceindex.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.lowlevel.HPM.samplingRate">
+<em class="property">property </em><code class="sig-name descname">samplingRate</code><a class="headerlink" href="#heapprof.lowlevel.HPM.samplingRate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the sampling rate used when generating this heap profile. This is a dict from
+number of bytes to sampling probability; for an allocation of size X, the sampling
+probability is given by the entry for the smallest number of bytes in this dict &gt; X. (If
+there is no such entry, the sampling probability is always 1)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.lowlevel.HPM.scaleFactor">
+<code class="sig-name descname">scaleFactor</code><span class="sig-paren">(</span><em class="sig-param">eventSize: int</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#heapprof.lowlevel.HPM.scaleFactor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an event size, find the appropriate scale factor for it.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.lowlevel.HPM.trace">
+<code class="sig-name descname">trace</code><span class="sig-paren">(</span><em class="sig-param">traceindex: int</em><span class="sig-paren">)</span> &#x2192; Optional[List[heapprof.types.TraceLine]]<a class="headerlink" href="#heapprof.lowlevel.HPM.trace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a traceindex (of the sort found in an HPDEvent), find the corresponding stack
+trace. Returns None if there is no known trace for this traceindex.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.lowlevel.HPM.warmRawTraceCache">
+<code class="sig-name descname">warmRawTraceCache</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.lowlevel.HPM.warmRawTraceCache" title="Permalink to this definition">¶</a></dt>
+<dd><p>rawTrace() can be slow, because it may need to fetch traces out of the HPM file. Calling
+this function forces that entire load to happen at once.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-heapprof.reader">
+<span id="heapprof-reader-module"></span><h2>heapprof.reader module<a class="headerlink" href="#module-heapprof.reader" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="heapprof.reader.Reader">
+<em class="property">class </em><code class="sig-prename descclassname">heapprof.reader.</code><code class="sig-name descname">Reader</code><span class="sig-paren">(</span><em class="sig-param">filebase: str</em><span class="sig-paren">)</span><a class="headerlink" href="#heapprof.reader.Reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Reader is the basic API for reading a heap profile.</p>
+<dl class="class">
+<dt id="heapprof.reader.Reader.TimePlot">
+<em class="property">class </em><code class="sig-name descname">TimePlot</code><span class="sig-paren">(</span><em class="sig-param">times</em>, <em class="sig-param">totalUsage</em>, <em class="sig-param">lines</em>, <em class="sig-param">labels</em><span class="sig-paren">)</span><a class="headerlink" href="#heapprof.reader.Reader.TimePlot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<dl class="method">
+<dt id="heapprof.reader.Reader.TimePlot.labels">
+<em class="property">property </em><code class="sig-name descname">labels</code><a class="headerlink" href="#heapprof.reader.Reader.TimePlot.labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.TimePlot.lines">
+<em class="property">property </em><code class="sig-name descname">lines</code><a class="headerlink" href="#heapprof.reader.Reader.TimePlot.lines" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.TimePlot.pyplot">
+<code class="sig-name descname">pyplot</code><span class="sig-paren">(</span><em class="sig-param">scale: int = 1048576</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.reader.Reader.TimePlot.pyplot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show this plot using pyplot. Note that this method will only work if you have
+separately pip installed matplotlib; we deliberately don’t add this, as it would create
+a lot of dependency bloat!</p>
+<p>The scale is a scaling applied to byte quantities.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.TimePlot.times">
+<em class="property">property </em><code class="sig-name descname">times</code><a class="headerlink" href="#heapprof.reader.Reader.TimePlot.times" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.TimePlot.totalUsage">
+<em class="property">property </em><code class="sig-name descname">totalUsage</code><a class="headerlink" href="#heapprof.reader.Reader.TimePlot.totalUsage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.compareFlowGraphs">
+<code class="sig-name descname">compareFlowGraphs</code><span class="sig-paren">(</span><em class="sig-param">dotFile: str</em>, <em class="sig-param">*relativeTimes</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.reader.Reader.compareFlowGraphs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a graph view of the comparison of a bunch of different time slices, and save the
+result as a .dot file to the given name. See FlowGraph.compare() for the kwargs available.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.elapsedTime">
+<code class="sig-name descname">elapsedTime</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#heapprof.reader.Reader.elapsedTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the relative time between program start and the last snapshot.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.fastGetUsage">
+<code class="sig-name descname">fastGetUsage</code><span class="sig-paren">(</span><em class="sig-param">snapshot: heapprof.types.Snapshot, lines: Tuple[heapprof.types.RawTraceLine, ...], cumulative: bool = True</em><span class="sig-paren">)</span> &#x2192; Tuple[Tuple[int, ...], int]<a class="headerlink" href="#heapprof.reader.Reader.fastGetUsage" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a function to quickly fetch usage numbers without computing full usage graphs.
+Given a snapshot and a list of N raw trace lines, this will return an array with N+1
+elements. The first N elements are the cumulative (or local) usage at the indicated trace
+lines; the last element is the total usage for all trace lines.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.finalTime">
+<code class="sig-name descname">finalTime</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#heapprof.reader.Reader.finalTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the time, in seconds since the epoch, of the last snapshot stored.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.flameGraph">
+<code class="sig-name descname">flameGraph</code><span class="sig-paren">(</span><em class="sig-param">snapshot: heapprof.types.Snapshot</em>, <em class="sig-param">output: TextIO</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.reader.Reader.flameGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a snapshot in Brendan Gregg’s “collapsed stack” format. This format can be
+visualized as a Flame graph with tools like speedscope.app. (NB that if you’re using
+speedscope, only the “left heavy” and “sandwich” views will make any sense; the “time
+order” view is intended to show CPU profiles over time, which would be nonsensical
+for this type of data)</p>
+<p>For speedscope, see <a class="reference external" href="https://github.com/jlfwong/speedscope">https://github.com/jlfwong/speedscope</a>, or use the hosted version at
+<a class="reference external" href="https://www.speedscope.app">https://www.speedscope.app</a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.flameGraphAt">
+<code class="sig-name descname">flameGraphAt</code><span class="sig-paren">(</span><em class="sig-param">relativeTime: float</em>, <em class="sig-param">output: TextIO</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.reader.Reader.flameGraphAt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.flowGraph">
+<code class="sig-name descname">flowGraph</code><span class="sig-paren">(</span><em class="sig-param">snapshot: heapprof.types.Snapshot</em><span class="sig-paren">)</span> &#x2192; heapprof.flow_graph.FlowGraph<a class="headerlink" href="#heapprof.reader.Reader.flowGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a FlowGraph given a snapshot. See flow_graph.py for the details of what these
+are and how they can be used for analysis; these are one of your best ways to both
+visualize a snapshot or analyze time-dependence.</p>
+<p>Use this method if you want a graph visualization of your data.</p>
+<p>NB: The first call to flowGraph on a Reader may be a bit slow, because it has to load up
+all the stack traces from the .hpm file; once that cache is warm, future reads will be much
+faster.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.flowGraphAt">
+<code class="sig-name descname">flowGraphAt</code><span class="sig-paren">(</span><em class="sig-param">relativeTime: float</em><span class="sig-paren">)</span> &#x2192; heapprof.flow_graph.FlowGraph<a class="headerlink" href="#heapprof.reader.Reader.flowGraphAt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.hasDigest">
+<code class="sig-name descname">hasDigest</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#heapprof.reader.Reader.hasDigest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test if this Reader already has a digest (i.e. an .hpc file). If not, you can create one
+using makeDigest; this is a slow operation (O(minutes), usually) so isn’t done on its own.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.initialTime">
+<code class="sig-name descname">initialTime</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#heapprof.reader.Reader.initialTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the time, in seconds since the epoch, when the program run started. This is useful
+if you want to compare this to logs data.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.makeDigest">
+<code class="sig-name descname">makeDigest</code><span class="sig-paren">(</span><em class="sig-param">timeInterval: float = 60</em>, <em class="sig-param">precision: float = 0.01</em>, <em class="sig-param">verbose: bool = False</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.reader.Reader.makeDigest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse the .hpm and .hpd files to form a digest. You need to do this before most of the
+methods will work.</p>
+<p>NB that this method deliberately does <em>not</em> check self.hasDigest(); you can use this to
+stomp an existing digest and create a new one.</p>
+<p>NB also that if this function is interrupted (say, with a ctrl-C) it should still yield a
+valid .hpc file; the file will just stop at whatever time makeDigest() has gotten up to by
+the time it was stopped. This doesn’t apply if the function is interrupted in a way that
+kills the interpreter midway through, like kill -9’ing the process, though.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>timeInterval</strong> – The time interval between successive snapshots to store in the digest,
+in seconds.</p></li>
+<li><p><strong>precision</strong> – At each snapshot, stack traces totalling up to this fraction of total
+memory used at that frame may be dropped into the “other stack trace” bucket.
+This can greatly shrink the size of the digest at no real cost in usefulness.
+Must be in [0, 1); a value of zero means nothing is dropped.</p></li>
+<li><p><strong>verbose</strong> – If true, prints status information to stderr as it runs.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.rawTrace">
+<code class="sig-name descname">rawTrace</code><span class="sig-paren">(</span><em class="sig-param">traceindex: int</em><span class="sig-paren">)</span> &#x2192; Optional[List[heapprof.types.RawTraceLine]]<a class="headerlink" href="#heapprof.reader.Reader.rawTrace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Like trace(), but the raw trace doesn’t include the actual lines of code, so is cheaper
+to fetch.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.samplingRate">
+<code class="sig-name descname">samplingRate</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Dict[int, float]<a class="headerlink" href="#heapprof.reader.Reader.samplingRate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the sampling rate parameters passed to the profiler.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.snapshotAt">
+<code class="sig-name descname">snapshotAt</code><span class="sig-paren">(</span><em class="sig-param">relativeTime: float</em><span class="sig-paren">)</span> &#x2192; heapprof.types.Snapshot<a class="headerlink" href="#heapprof.reader.Reader.snapshotAt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the snapshot closest in time (rounding down) to the indicated relative time.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.snapshotInterval">
+<code class="sig-name descname">snapshotInterval</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#heapprof.reader.Reader.snapshotInterval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the time interval, in seconds, between successive time snapshots in the digest.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.snapshots">
+<code class="sig-name descname">snapshots</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Sequence[heapprof.types.Snapshot]<a class="headerlink" href="#heapprof.reader.Reader.snapshots" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a sequence of all the time snapshots in the digest.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.timePlot">
+<code class="sig-name descname">timePlot</code><span class="sig-paren">(</span><em class="sig-param">lines: Optional[Dict[str</em>, <em class="sig-param">Union[str</em>, <em class="sig-param">heapprof.types.RawTraceLine]]] = None</em><span class="sig-paren">)</span> &#x2192; heapprof.reader.TimePlot<a class="headerlink" href="#heapprof.reader.Reader.timePlot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sometimes, after you’ve looked at usage graphs and so on, you want to see how memory
+usage in certain parts of the program is varying over time. This function helps you with
+that.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>lines</strong> – <p>If given, this is a map from display label to lines of code whose usage you
+want to monitor. In this case, the output data will show memory usage at those
+lines, in addition to overall usage by the program.</p>
+<p>The lines may be specified either as RawTraceLine, or as “filename:lineno”. This
+latter form is provided for convenience while debugging.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.trace">
+<code class="sig-name descname">trace</code><span class="sig-paren">(</span><em class="sig-param">traceindex: int</em><span class="sig-paren">)</span> &#x2192; Optional[List[heapprof.types.TraceLine]]<a class="headerlink" href="#heapprof.reader.Reader.trace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a trace index (of a sort which you can get from various other functions), return a
+proper stack trace. A value of None means that we have no trace stored for this index.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.writeFlameGraph">
+<code class="sig-name descname">writeFlameGraph</code><span class="sig-paren">(</span><em class="sig-param">filename: str, when: Union[float, heapprof.types.Snapshot]</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.reader.Reader.writeFlameGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience helper: Grab a snapshot at a particular relative time, and write it in
+collapsed stack format to filename.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-heapprof.types">
+<span id="heapprof-types-module"></span><h2>heapprof.types module<a class="headerlink" href="#module-heapprof.types" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="heapprof.types.RawTraceLine">
+<em class="property">class </em><code class="sig-prename descclassname">heapprof.types.</code><code class="sig-name descname">RawTraceLine</code><a class="headerlink" href="#heapprof.types.RawTraceLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>A RawTraceLine represents a single line of code.</p>
+<dl class="method">
+<dt id="heapprof.types.RawTraceLine.filename">
+<em class="property">property </em><code class="sig-name descname">filename</code><a class="headerlink" href="#heapprof.types.RawTraceLine.filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.types.RawTraceLine.lineno">
+<em class="property">property </em><code class="sig-name descname">lineno</code><a class="headerlink" href="#heapprof.types.RawTraceLine.lineno" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.types.RawTraceLine.parse">
+<em class="property">classmethod </em><code class="sig-name descname">parse</code><span class="sig-paren">(</span><em class="sig-param">value: Union[RawTraceLine, str]</em><span class="sig-paren">)</span> &#x2192; heapprof.types.RawTraceLine<a class="headerlink" href="#heapprof.types.RawTraceLine.parse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="heapprof.types.Snapshot">
+<em class="property">class </em><code class="sig-prename descclassname">heapprof.types.</code><code class="sig-name descname">Snapshot</code><a class="headerlink" href="#heapprof.types.Snapshot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>A Snapshot represents the state of the heap at a single moment in time. These are the basic
+elements of .hpc files.</p>
+<dl class="method">
+<dt id="heapprof.types.Snapshot.relativeTime">
+<em class="property">property </em><code class="sig-name descname">relativeTime</code><a class="headerlink" href="#heapprof.types.Snapshot.relativeTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.types.Snapshot.totalUsage">
+<code class="sig-name descname">totalUsage</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#heapprof.types.Snapshot.totalUsage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="heapprof.types.Snapshot.usage">
+<em class="property">property </em><code class="sig-name descname">usage</code><a class="headerlink" href="#heapprof.types.Snapshot.usage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="heapprof.types.TraceLine">
+<em class="property">class </em><code class="sig-prename descclassname">heapprof.types.</code><code class="sig-name descname">TraceLine</code><a class="headerlink" href="#heapprof.types.TraceLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>A TraceLine is a RawTraceLine plus the actual line of code. These can be fetched from HPM
+files so long as the source code is also present; doing so is (for obvious reasons) more
+expensive than just working with RawTraces, but can make nicer stack traces.</p>
+<dl class="method">
+<dt id="heapprof.types.TraceLine.fileline">
+<em class="property">property </em><code class="sig-name descname">fileline</code><a class="headerlink" href="#heapprof.types.TraceLine.fileline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.types.TraceLine.filename">
+<em class="property">property </em><code class="sig-name descname">filename</code><a class="headerlink" href="#heapprof.types.TraceLine.filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.types.TraceLine.lineno">
+<em class="property">property </em><code class="sig-name descname">lineno</code><a class="headerlink" href="#heapprof.types.TraceLine.lineno" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">heapprof</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">heapprof package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-heapprof.flow_graph">heapprof.flow_graph module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-heapprof.lowlevel">heapprof.lowlevel module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-heapprof.reader">heapprof.reader module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-heapprof.types">heapprof.types module</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">The heapprof API</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Yonatan Zunger.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/heapprof.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
