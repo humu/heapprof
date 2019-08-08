@@ -246,9 +246,10 @@ class Reader(object):
                 The lines may be specified either as RawTraceLine, or as "filename:lineno". This
                 latter form is provided for convenience while debugging.
         """
+        lines = lines or {}
         times: List[float] = []
         totalUsage: List[int] = []
-        lineValues: List[List[int]] = [[] for i in range(len(lines))] if lines else []
+        lineValues: List[List[int]] = [[] for i in range(len(lines))]
 
         labels = sorted(list(lines.keys()))
         traceLines = tuple(RawTraceLine.parse(lines[label]) for label in labels)

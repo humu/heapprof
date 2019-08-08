@@ -92,8 +92,152 @@ usage.
 
 ## Flow Graphs
 
+Flow graphs are directed graphs, where each line of code is represented by a node, and each function
+call is represented by an edge. The "local usage" of a node is how much memory is allocated by
+that line of code; the "cumulative usage" of a node is how much memory is allocated by that line,
+and everything it calls. The usage of an edge is how much memory was allocated by code paths that
+went along that edge. Flow graphs can show memory usage at one or more timestamps on a single view.
+From a distance, they look like this:
+
+![A flow graph zoomed out](assets/distant_flow_graph.png "A zoomed-out flow graph")
+
+From close up, they look like this:
+
+![A flow graph up close](assets/zoomed_flow_graph.png "A zoomed-in flow graph")
+
+Each box has three parts:
+
+* The sequence of lines of code. If each call to a single line leads to another single line, and no
+    significant memory is being allocated by the individual lines, they're all grouped together in a
+    single box; any memory that's actually being allocated is (by definition) being allocated by the
+    bottommost line.
+* The colored boxes at the bottom show memory counts. Each box has the form "local usage /
+    cumulative usage = percent". Local usage is the amount of memory allocated by that bottommost
+    line of code directly. Cumulative usage is the amount of memory allocated by that line, plus by
+    any functions called by that line. Percentage is simply the cumulative usage as a percent of
+    total memory usage in the program. Each box is color-coded by percentage, moving from blue
+    (small usage) to red (high usage). When there are multiple boxes, this corresponds to multiple
+    timestamps.
+* The edges coming out of a box indicate different lines of code which could come after this line
+    and are the next places where memory is allocated. The number by the edge is the amount of
+    memory allocated along this path; if there are multiple numbers, they correspond to multiple
+    timestamps.
+
+So in the zoomed-in diagram, we see that `bigtable/row_data.py:483` was allocating 15.1kB of memory.
+(This is a line in a client library which calls a function that processes a single chunk of data
+from the network) After reaching that line, the next line of code which allocates memory is either
+`row_data.py:510` or `row_data.py:501`, which are two different branches of the next function
+called, that handle different possible contents of that data chunk. We see that at timestamp 1, a
+total of 182.9MB was being allocated in the first path, and 444.1MB in the second; by timestamp 2,
+the first one jumped to 542.8MB, while the second jumped only to 579.7MB. Looking at the next boxes,
+we see that the first box jumped from light blue to dark blue, meaning that the jump to 542.8MB also
+meant it now took up a much larger fraction of system memory; the second box went from purple to
+dark blue, meaning that although it took up more bytes, it took up a smaller fraction of total
+usage. That is, in the transition between these two timestamps, suddenly a lot more memory was being
+taken up by the code path that goes through `row_data.py:510`.
+
+A flow graph for a single timestamp can be created with
+
+```
+r = heapprof.read('filebase')
+r.flowGraphAt(3800).writeDotFile('flow-3800.dot')
+```
+
+A flow graph comparing multiple timestamps can be created with
+
+```
+r.compareFlowGraphs('flow-3800-vs-4500.dot', 3800, 4500)
+```
+
+Dot files can be viewed with [graphviz](https://graphviz.org); on an OS X or UNIX system, for
+example, you would do this with
+
+```
+dot -Tpdf -o flow-3800-vs-4500.pdf flow-3800-vs-4500.dot
+```
+
+The `writeDotFile` and `compareFlowGraphs` methods have various options about how the graph will be
+rendered -- which lines and edges to suppress as "too small to matter," and whether the size of
+nodes should be scaled based on their local usage. Local usage scaling has its pros and cons: it
+lets you very quickly see where memory is being allocated, but it draws your eye to the actual line
+where the allocation happens, rather than to the longer code path leading there, which is
+highlighted by colors. Which setting is most useful will vary as you debug a particular situation.
+
 ## Flame Graphs
 
-## The High-Level API
+Flame graphs were originally designed to view CPU usage, but can also be used to analyze memory.
+heapprof's preferred tool to view flame graphs is [speedscope](https://speedscope.app). These are
+interactive objects viewed in a browser; a typical flame graph looks like this.
 
-## The Low-Level API
+![A flame graph zoomed out](assets/flame_graph.png)
+
+In this diagram, each block represents a line of a stack trace, and its width represents the
+cumulative amount of memory allocated by that line or by lines that follow it. A line is stacked up
+on another line if it follows it. This means that wide blocks are where most of the memory is going,
+so you can quickly see where the biggest memory use is. Unlike a flow graph, however, if a single
+line of code can be reached through multiple paths, each of those paths will show up as a _separate_
+block on the diagram; this means that if each path contributes a little, the fact that this line is
+a central hub won't be easily visible.
+
+To help with that, from the flame graph you can flip to a "sandwich" view which looks like this:
+
+![Sandwich view of a flame graph](assets/flame_graph_sandwich.png)
+
+This is simply a list of the lines of code, with cumulative ("total") and local ("self") usage
+listed.
+
+Flame graphs and flow graphs show the same information overall, but they organize it in different
+ways. Flame graphs are good for quickly seeing where the largest lumps are, but they obscure the
+calling paths between lines of code; flow graphs show how memory flows through the system, but don't
+highlight all types of usage hotspot as vividly. You can (and should!) use both.
+
+To create a flame graph at a single timestamp, run
+
+```
+r = heapprof.read('filebase')
+r.writeFlameGraph('flame-3800.txt', 3800)
+```
+
+You can then open this file either on the [speedscope website](https://speedscope.app) or by
+installing and running [speedscope](https://github.com/jlfwong/speedscope) locally. In either case,
+you should use the "left heavy" or "snapshot" views; the "time order" view is specific to CPU
+profiling, and produces nonsense for these flame graphs.
+
+## API Access to Data
+
+If you want to analyze the data in more depth than just visualizing it, you can use the `Reader` API
+to directly process the digested contents of a heap profile. Your most important tools for this are:
+
+* `Reader.snapshotAt` returns a `Snapshot` of memory usage at a given relative time. Each snapshot
+    is simply a dict from trace index (a unique ID for each stack trace that shows up in the
+    profile) to the number of live bytes in memory allocated by that stack trace at that time.
+    A trace index of zero means "unknown trace;" this generally means that some subtle issue
+    prevented the profiler from collecting a trace.
+* `Reader.rawTrace` and `Reader.trace` go from a trace index to an actual stack trace. The
+    difference is that a raw trace contains only file names and line numbers, while a full trace
+    also fetches the actual line of code from the file, much like the traces shown in exception
+    tracebacks. Full traces can only be pulled if you have the same source files locally, and at the
+    same paths; thus they're generally useful if you're running the analysis on the same machine
+    where you collected the heap profile.
+
+All of the visualization functions above are built on top of this API, so you can look at their
+implementation for inspiration about ways to analyze the data.
+
+There is also a low-level API which gives you access to the underlying "raw" heap traces, before
+they've been digested into snapshots. The useful one of these is `Reader.hpd`. (There are also
+low-level API's to the `hpm` and `hpc` files, but they don't provide any particular value above that
+of the high-level API; they're really implementation details) The `HPD` object is an iterable of
+`HPDEvent` objects, which are the raw items written to disk by the profiler. Each event contains:
+
+* `timestamp`: The timestamp when the event occurred, in seconds since the epoch. (Note that this
+    is the absolute time, not the relative timestamp! You can get the global start time from the
+    high-level API)
+* `traceindex`: The trace index at which the corresponding piece of memory was allocated.
+    (Currently, heapprof does not store the trace index at which the memory was freed)
+* `size`: The number of bytes allocated or deallocated; this is positive for an allocation event,
+    negative for a free event.
+* `scaleFactor`: Because heapprof is a sampling heap profiler, not all events are logged. This
+    number is a multiplicative scale factor which you should apply to `size` to get an estimate of
+    the total number of bytes that were being allocated or freed during that time.
+
+To go into more depth, continue on to [advanced heapprof](advanced_heapprof.md).
