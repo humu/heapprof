@@ -3,3 +3,4 @@ cpplint
 flake8
 isort
 mypy
+sphinx

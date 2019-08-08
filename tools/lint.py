@@ -4,7 +4,8 @@ import subprocess
 import sys
 from typing import List, Optional, Set
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+from _common import REPO_ROOT
+
 EXCLUDE_NAMES = {'build', 'dist'}
 
 
