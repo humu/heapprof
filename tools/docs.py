@@ -40,8 +40,8 @@ def ensureRequirements() -> bool:
 
 def clearOldSite() -> None:
     logging.info('Clearing old site images')
-    shutil.rmtree(os.path.join(REPO_ROOT, 'docs/build'), ignore_errors=True)
-    shutil.rmtree(os.path.join(REPO_ROOT, '_site'), ignore_errors=True)
+    shutil.rmtree(os.path.join(REPO_ROOT, '_build'), ignore_errors=True)
+    shutil.rmtree(os.path.join(REPO_ROOT, 'docs'), ignore_errors=True)
 
 
 def rebuildSphinx() -> None:
@@ -61,8 +61,15 @@ def rebuildSphinx() -> None:
     env['PYTHONPATH'] = ':'.join(pythonPath)
 
     subprocess.run(
-        'make html', cwd=os.path.join(REPO_ROOT, 'docs'), shell=True, check=True, env=env
+        'make html', cwd=os.path.join(REPO_ROOT, 'docs_src'), shell=True, check=True, env=env
     )
+
+
+def configureSite() -> None:
+    # While Jekyll would have no problem finding the docs in any directory, the Jekyll that runs as
+    # part of GitHub Pages seems a bit more specific.
+    shutil.move(os.path.join(REPO_ROOT, 'docs_src/build/html'), os.path.join(REPO_ROOT, 'docs'))
+    shutil.rmtree(os.path.join(REPO_ROOT, 'docs_src/build'))
 
 
 def main():
@@ -74,6 +81,7 @@ def main():
 
     clearOldSite()
     rebuildSphinx()
+    configureSite()
 
 
 if __name__ == '__main__':
