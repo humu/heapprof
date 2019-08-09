@@ -1,0 +1,149 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>heapprof: A Logging Heap Profiler &#8212; heapprof  documentation</title>
+    <link rel="stylesheet" href="_static/nameko.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="heapprof quickstart" href="quickstart.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Lora:400' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+  </head><body>
+  
+  
+  <div class="indexwrapper">
+  
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="quickstart.html" title="heapprof quickstart"
+             accesskey="N">next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">heapprof  documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="heapprof-a-logging-heap-profiler">
+<h1>heapprof: A Logging Heap Profiler<a class="headerlink" href="#heapprof-a-logging-heap-profiler" title="Permalink to this headline">¶</a></h1>
+<a class="reference external image-reference" href="https://www.python.org/downloads/release/python-374/"><img alt="https://img.shields.io/badge/python-3.7-blue.svg" src="https://img.shields.io/badge/python-3.7-blue.svg" /></a>
+<a class="reference external image-reference" href="code_of_conduct.html"><img alt="https://img.shields.io/badge/Contributor%20Covenant-v1.4%20adopted-ff69b4.svg" src="https://img.shields.io/badge/Contributor%20Covenant-v1.4%20adopted-ff69b4.svg" /></a>
+<a class="reference external image-reference" href="license.html"><img alt="https://img.shields.io/badge/License-MIT-yellow.svg" src="https://img.shields.io/badge/License-MIT-yellow.svg" /></a>
+<a class="reference external image-reference" href="https://circleci.com/gh/humu/heapprof/tree/master"><img alt="https://circleci.com/gh/humu/heapprof/tree/master.svg?style=svg&amp;circle-token=1557bfcabda0155d6505a45e3f00d4a71a005565" src="https://circleci.com/gh/humu/heapprof/tree/master.svg?style=svg&amp;circle-token=1557bfcabda0155d6505a45e3f00d4a71a005565" /></a>
+<p>heapprof is a logging, sampling heap profiler for Python 3.7+.</p>
+<ul class="simple">
+<li><p>“Logging” means that as the program runs, it steadily generates a log of memory allocation and
+release events. This means that you can easily look at memory usage as a function of time.</p></li>
+<li><p>“Sampling” means that it can record only a statistically random sample of memory events. This
+improves performance dramatically while writing logs, and (with the right parameters) sacrifices
+almost no accuracy.</p></li>
+</ul>
+<p>It comes with a suite of visualization and analysis tools (including time plots, flame graphs, and
+flow graphs), as well as an API for doing your own analyses of the results.</p>
+<p>heapprof is complementary to <a class="reference external" href="https://docs.python.org/3/library/tracemalloc.html">tracemalloc</a>,
+which is a snapshotting heap profiler. The difference is that tracemalloc keeps track of live memory
+internally, and only writes snapshots when its snapshot() function is called; this means it has
+slightly lower overhead, but you have to know the moments at which you’ll want a snapshot before the
+program starts. This makes it particularly useful for finding leaks (from the snapshot at program
+exit), but not as good for understanding events like memory spikes.</p>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">heapprof quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_heapprof.html">Using heapprof</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="using_heapprof.html#installation-and-system-requirements">Installation and system requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_heapprof.html#running-your-code">Running your code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_heapprof.html#making-a-digest">Making a digest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="visualizing_results.html">Visualizing and interpreting results</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="visualizing_results.html#time-plots">Time Plots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualizing_results.html#flow-graphs">Flow Graphs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualizing_results.html#flame-graphs">Flame Graphs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualizing_results.html#api-access-to-data">API Access to Data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_heapprof.html">Advanced heapprof</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="advanced_heapprof.html#controlling-sampling">Controlling Sampling</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/index.html">The heapprof API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/heapprof.html">The top-level heapprof package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/reader.html">heapprof.reader: The high-level API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/types.html">heapprof.types: Common definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/flow_graph.html">heapprof.flow_graph: The FlowGraph class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/lowlevel.html">heapprof.lowlevel: The low-level API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to heapprof</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#code-of-conduct">Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#desiderata">Desiderata</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">MIT License</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation index</a><ul>
+      <li>Next: <a href="quickstart.html" title="next chapter">heapprof quickstart</a></li>
+  </ul></li>
+</ul>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  
+  </div>
+  
+  </body>
+</html>

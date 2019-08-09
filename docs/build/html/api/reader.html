@@ -1,0 +1,323 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>heapprof.reader: The high-level API &#8212; heapprof  documentation</title>
+    <link rel="stylesheet" href="../_static/nameko.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="heapprof.types: Common definitions" href="types.html" />
+    <link rel="prev" title="The top-level heapprof package" href="heapprof.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Lora:400' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+  </head><body>
+  
+  
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="types.html" title="heapprof.types: Common definitions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="heapprof.html" title="The top-level heapprof package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">heapprof  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The heapprof API</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-heapprof.reader">
+<span id="heapprof-reader-the-high-level-api"></span><h1>heapprof.reader: The high-level API<a class="headerlink" href="#module-heapprof.reader" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="heapprof.reader.Reader">
+<em class="property">class </em><code class="sig-prename descclassname">heapprof.reader.</code><code class="sig-name descname">Reader</code><span class="sig-paren">(</span><em class="sig-param">filebase: str</em><span class="sig-paren">)</span><a class="headerlink" href="#heapprof.reader.Reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Reader is the basic API for reading a heap profile.</p>
+<dl class="method">
+<dt id="heapprof.reader.Reader.hasDigest">
+<code class="sig-name descname">hasDigest</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#heapprof.reader.Reader.hasDigest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test if this Reader already has a digest (i.e. an ._hpc file). If not, you can create one
+using makeDigest; this is a slow operation (O(minutes), usually) so isn’t done on its own.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.makeDigest">
+<code class="sig-name descname">makeDigest</code><span class="sig-paren">(</span><em class="sig-param">timeInterval: float = 60</em>, <em class="sig-param">precision: float = 0.01</em>, <em class="sig-param">verbose: bool = False</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.reader.Reader.makeDigest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse the ._hpm and ._hpd files to form a digest. You need to do this before most of the
+methods will work.</p>
+<p>NB that this method deliberately does <em>not</em> check self.hasDigest(); you can use this to
+stomp an existing digest and create a new one.</p>
+<p>NB also that if this function is interrupted (say, with a ctrl-C) it should still yield a
+valid ._hpc file; the file will just stop at whatever time makeDigest() has gotten up to by
+the time it was stopped. This doesn’t apply if the function is interrupted in a way that
+kills the interpreter midway through, like kill -9’ing the process, though.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>timeInterval</strong> – The time interval between successive snapshots to store in the digest,
+in seconds.</p></li>
+<li><p><strong>precision</strong> – At each snapshot, stack traces totalling up to this fraction of total
+memory used at that frame may be dropped into the “other stack trace” bucket.
+This can greatly shrink the size of the digest at no real cost in usefulness.
+Must be in [0, 1); a value of zero means nothing is dropped.</p></li>
+<li><p><strong>verbose</strong> – If true, prints status information to stderr as it runs.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.initialTime">
+<code class="sig-name descname">initialTime</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#heapprof.reader.Reader.initialTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the time, in seconds since the epoch, when the program run started. This is useful
+if you want to compare this to logs data.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.finalTime">
+<code class="sig-name descname">finalTime</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#heapprof.reader.Reader.finalTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the time, in seconds since the epoch, of the last snapshot stored.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.elapsedTime">
+<code class="sig-name descname">elapsedTime</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#heapprof.reader.Reader.elapsedTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the relative time between program start and the last snapshot.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.samplingRate">
+<code class="sig-name descname">samplingRate</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Dict[int, float]<a class="headerlink" href="#heapprof.reader.Reader.samplingRate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the sampling rate parameters passed to the profiler.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.snapshotInterval">
+<code class="sig-name descname">snapshotInterval</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#heapprof.reader.Reader.snapshotInterval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the time interval, in seconds, between successive time snapshots in the digest.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.trace">
+<code class="sig-name descname">trace</code><span class="sig-paren">(</span><em class="sig-param">traceindex: int</em><span class="sig-paren">)</span> &#x2192; Optional[List[heapprof.types.TraceLine]]<a class="headerlink" href="#heapprof.reader.Reader.trace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a trace index (of a sort which you can get from various other functions), return a
+proper stack trace. A value of None means that we have no trace stored for this index.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.rawTrace">
+<code class="sig-name descname">rawTrace</code><span class="sig-paren">(</span><em class="sig-param">traceindex: int</em><span class="sig-paren">)</span> &#x2192; Optional[List[heapprof.types.RawTraceLine]]<a class="headerlink" href="#heapprof.reader.Reader.rawTrace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Like trace(), but the raw trace doesn’t include the actual lines of code, so is cheaper
+to fetch.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.snapshots">
+<code class="sig-name descname">snapshots</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Sequence[heapprof.types.Snapshot]<a class="headerlink" href="#heapprof.reader.Reader.snapshots" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a sequence of all the time snapshots in the digest.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.snapshotAt">
+<code class="sig-name descname">snapshotAt</code><span class="sig-paren">(</span><em class="sig-param">relativeTime: float</em><span class="sig-paren">)</span> &#x2192; heapprof.types.Snapshot<a class="headerlink" href="#heapprof.reader.Reader.snapshotAt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the snapshot closest in time (rounding down) to the indicated relative time.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.hpm">
+<em class="property">property </em><code class="sig-name descname">hpm</code><a class="headerlink" href="#heapprof.reader.Reader.hpm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Access to the low-level HPM interface.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.hpd">
+<em class="property">property </em><code class="sig-name descname">hpd</code><a class="headerlink" href="#heapprof.reader.Reader.hpd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Access to the low-level HPD interface.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.hpc">
+<em class="property">property </em><code class="sig-name descname">hpc</code><a class="headerlink" href="#heapprof.reader.Reader.hpc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Access to the low-level HPC interface.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.fastGetUsage">
+<code class="sig-name descname">fastGetUsage</code><span class="sig-paren">(</span><em class="sig-param">snapshot: heapprof.types.Snapshot, lines: Tuple[heapprof.types.RawTraceLine, ...], cumulative: bool = True</em><span class="sig-paren">)</span> &#x2192; Tuple[Tuple[int, ...], int]<a class="headerlink" href="#heapprof.reader.Reader.fastGetUsage" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a function to quickly fetch usage numbers without computing full usage graphs.
+Given a snapshot and a list of N raw trace lines, this will return an array with N+1
+elements. The first N elements are the cumulative (or local) usage at the indicated trace
+lines; the last element is the total usage for all trace lines.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="heapprof.reader.Reader.TimePlot">
+<em class="property">class </em><code class="sig-name descname">TimePlot</code><span class="sig-paren">(</span><em class="sig-param">times</em>, <em class="sig-param">totalUsage</em>, <em class="sig-param">lines</em>, <em class="sig-param">labels</em><span class="sig-paren">)</span><a class="headerlink" href="#heapprof.reader.Reader.TimePlot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<dl class="method">
+<dt id="heapprof.reader.Reader.TimePlot.times">
+<em class="property">property </em><code class="sig-name descname">times</code><a class="headerlink" href="#heapprof.reader.Reader.TimePlot.times" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.TimePlot.totalUsage">
+<em class="property">property </em><code class="sig-name descname">totalUsage</code><a class="headerlink" href="#heapprof.reader.Reader.TimePlot.totalUsage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.TimePlot.lines">
+<em class="property">property </em><code class="sig-name descname">lines</code><a class="headerlink" href="#heapprof.reader.Reader.TimePlot.lines" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.TimePlot.labels">
+<em class="property">property </em><code class="sig-name descname">labels</code><a class="headerlink" href="#heapprof.reader.Reader.TimePlot.labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.TimePlot.pyplot">
+<code class="sig-name descname">pyplot</code><span class="sig-paren">(</span><em class="sig-param">scale: int = 1048576</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.reader.Reader.TimePlot.pyplot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show this plot using pyplot. Note that this method will only work if you have
+separately pip installed matplotlib; we deliberately don’t add this, as it would create
+a lot of dependency bloat!</p>
+<p>The scale is a scaling applied to byte quantities.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.timePlot">
+<code class="sig-name descname">timePlot</code><span class="sig-paren">(</span><em class="sig-param">lines: Optional[Dict[str</em>, <em class="sig-param">Union[str</em>, <em class="sig-param">heapprof.types.RawTraceLine]]] = None</em><span class="sig-paren">)</span> &#x2192; heapprof.reader.TimePlot<a class="headerlink" href="#heapprof.reader.Reader.timePlot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sometimes, after you’ve looked at usage graphs and so on, you want to see how memory
+usage in certain parts of the program is varying over time. This function helps you with
+that.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>lines</strong> – <p>If given, this is a map from display label to lines of code whose usage you
+want to monitor. In this case, the output data will show memory usage at those
+lines, in addition to overall usage by the program.</p>
+<p>The lines may be specified either as RawTraceLine, or as “filename:lineno”. This
+latter form is provided for convenience while debugging.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.flowGraph">
+<code class="sig-name descname">flowGraph</code><span class="sig-paren">(</span><em class="sig-param">snapshot: heapprof.types.Snapshot</em><span class="sig-paren">)</span> &#x2192; heapprof.flow_graph.FlowGraph<a class="headerlink" href="#heapprof.reader.Reader.flowGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a FlowGraph given a snapshot. See flow_graph.py for the details of what these
+are and how they can be used for analysis; these are one of your best ways to both
+visualize a snapshot or analyze time-dependence.</p>
+<p>Use this method if you want a graph visualization of your data.</p>
+<p>NB: The first call to flowGraph on a Reader may be a bit slow, because it has to load up
+all the stack traces from the ._hpm file; once that cache is warm, future reads will be much
+faster.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.flowGraphAt">
+<code class="sig-name descname">flowGraphAt</code><span class="sig-paren">(</span><em class="sig-param">relativeTime: float</em><span class="sig-paren">)</span> &#x2192; heapprof.flow_graph.FlowGraph<a class="headerlink" href="#heapprof.reader.Reader.flowGraphAt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.compareFlowGraphs">
+<code class="sig-name descname">compareFlowGraphs</code><span class="sig-paren">(</span><em class="sig-param">dotFile: str</em>, <em class="sig-param">*relativeTimes</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.reader.Reader.compareFlowGraphs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a graph view of the comparison of a bunch of different time slices, and save the
+result as a .dot file to the given name. See FlowGraph.compare() for the kwargs available.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.flameGraph">
+<code class="sig-name descname">flameGraph</code><span class="sig-paren">(</span><em class="sig-param">snapshot: heapprof.types.Snapshot</em>, <em class="sig-param">output: TextIO</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.reader.Reader.flameGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a snapshot in Brendan Gregg’s “collapsed stack” format. This format can be
+visualized as a Flame graph with tools like speedscope.app. (NB that if you’re using
+speedscope, only the “left heavy” and “sandwich” views will make any sense; the “time
+order” view is intended to show CPU profiles over time, which would be nonsensical
+for this type of data)</p>
+<p>For speedscope, see <a class="reference external" href="https://github.com/jlfwong/speedscope">https://github.com/jlfwong/speedscope</a>, or use the hosted version at
+<a class="reference external" href="https://www.speedscope.app">https://www.speedscope.app</a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.flameGraphAt">
+<code class="sig-name descname">flameGraphAt</code><span class="sig-paren">(</span><em class="sig-param">relativeTime: float</em>, <em class="sig-param">output: TextIO</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.reader.Reader.flameGraphAt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="heapprof.reader.Reader.writeFlameGraph">
+<code class="sig-name descname">writeFlameGraph</code><span class="sig-paren">(</span><em class="sig-param">filename: str, when: Union[float, heapprof.types.Snapshot]</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.reader.Reader.writeFlameGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience helper: Grab a snapshot at a particular relative time, and write it in
+collapsed stack format to filename.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation index</a><ul>
+  <li><a href="index.html">The heapprof API</a><ul>
+      <li>Previous: <a href="heapprof.html" title="previous chapter">The top-level heapprof package</a></li>
+      <li>Next: <a href="types.html" title="next chapter">heapprof.types: Common definitions</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/reader.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  
+  </body>
+</html>

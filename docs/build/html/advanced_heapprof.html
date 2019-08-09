@@ -1,0 +1,199 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Advanced heapprof &#8212; heapprof  documentation</title>
+    <link rel="stylesheet" href="_static/nameko.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="The heapprof API" href="api/index.html" />
+    <link rel="prev" title="Visualizing and interpreting results" href="visualizing_results.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Lora:400' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+  </head><body>
+  
+  
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api/index.html" title="The heapprof API"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="visualizing_results.html" title="Visualizing and interpreting results"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">heapprof  documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="advanced-heapprof">
+<h1>Advanced heapprof<a class="headerlink" href="#advanced-heapprof" title="Permalink to this headline">¶</a></h1>
+<p>As you use heapprof more, you’ll want to understand the corner cases of memory allocation better.
+Here are some general advanced tips worth knowing:</p>
+<ul class="simple">
+<li><p>The performance overhead of heapprof hasn’t yet been measured. From a rough eyeball estimate, it
+seems to be significant during the initial import of modules (because those generate so many
+distinct stack traces) but fairly low (similar to cProfile) during code execution. This will
+need to be measured and performance presumably tuned.</p></li>
+<li><p>The .hpx file format is optimized around minimizing overhead at runtime. The idea is that the
+profiler continuously writes to the two open file descriptors, and relies on the kernel’s
+buffering in the file system implementation to minimize that impact; to use that buffering most
+effectively, it’s important to minimize the size of data written, so that flushes are rare. This
+is why the wire encoding (cf file_format.*) tends towards things like varints, which use a bit
+more CPU but reduce bytes on the wire. This also helps keep the sizes of the generated files
+under control.</p></li>
+<li><p>The profiler very deliberately uses C++ native types, not Python data types, for its internal
+operations. This has two advantages: pure C++ types are faster and more compact, (because of
+the simpler memory management model), and they eliminate the risk of weird recursions if the
+heap profiler were to try to call any of the Python allocators. NB, however, that this means
+that the heap profiler does not include its own memory allocation in its output!</p></li>
+<li><p>More generally, the heap profiler only profiles calls to the Python memory allocators; C/C++
+modules which allocate memory separately from that are not counted. This can lead to
+discrepancies between the output of heapprof and total system usage.</p></li>
+<li><p>Furthermore, all real malloc() implementations generally allocate more bytes than requested under
+the hood (e.g., to guarantee memory alignment of the result; see e.g.
+<a class="reference external" href="https://github.com/gperftools/gperftools/blob/master/src/common.cc#L77">this function</a> in
+tcmalloc). Unfortunately, there is no implementation-independent way to find out how many bytes
+were actually allocated, either from the underlying C/C++ allocators or from the higher-level
+Python allocators. This means that the heap measured by heapprof will be the “logical” heap
+size, which is strictly less than the heap size requested by the process from the kernel.
+However, it is that latter size which is monitored by external systems such as the out-of-memory
+(OOM) process killers in sandbox environments.</p></li>
+</ul>
+<div class="section" id="controlling-sampling">
+<h2>Controlling Sampling<a class="headerlink" href="#controlling-sampling" title="Permalink to this headline">¶</a></h2>
+<p>The sampling rate controls the probability with which heap events are written. Too high a sampling
+rate, and the overhead of writing the data will stop your app, or the amount of data written will
+overload your disk; too low a sampling rate, and you won’t get a clear picture of events.</p>
+<p>heapprof defines sampling rates as a <code class="docutils literal notranslate"><span class="pre">Dict[int,</span> <span class="pre">float]</span></code>, which maps the upper range of byte sizes to
+sampling probabilities. For example, the default sampling rate is <code class="docutils literal notranslate"><span class="pre">{128:</span> <span class="pre">1e-4,</span> <span class="pre">8192:</span> <span class="pre">0.1}</span></code>. This
+means that allocations from 1-127 bytes get sampled at 1 in 10,000; allocations from 128-8191 bytes
+get sampled at 1 in 10; and allocations of 8192 bytes or more are always written, without sampling.
+These values have proven useful for some programs, but they probably aren’t right for everything.</p>
+<p>As heapprof is in its early days, its tools for picking sampling rates are somewhat manual. The best
+way to do this is to run heapprof in “stats gathering” mode: you can do this either with</p>
+<p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">heapprof</span> <span class="pre">--mode</span> <span class="pre">stats</span> <span class="pre">--</span> <span class="pre">mycommand.py</span> <span class="pre">args</span> <span class="pre">...</span></code></p>
+<p>or programmatically by calling <code class="docutils literal notranslate"><span class="pre">heapprof.gatherStats()</span></code> instead of <code class="docutils literal notranslate"><span class="pre">heapprof.start(filename)</span></code>. In
+this mode, rather than generating .hpx files, it will build up a distribution of allocation sizes,
+and print it to stderr at profiling stop. The result will look something like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-------------------------------------------</span>
+<span class="n">HEAP</span> <span class="n">USAGE</span> <span class="n">SUMMARY</span>
+               <span class="n">Size</span>    <span class="n">Count</span>      <span class="n">Bytes</span>
+              <span class="mi">1</span> <span class="o">-</span> <span class="mi">1</span>   <span class="mi">138553</span>       <span class="mi">6646</span>
+              <span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span>    <span class="mi">30462</span>      <span class="mi">60924</span>
+              <span class="mi">3</span> <span class="o">-</span> <span class="mi">4</span>     <span class="mi">3766</span>      <span class="mi">14076</span>
+              <span class="mi">5</span> <span class="o">-</span> <span class="mi">8</span>   <span class="mi">794441</span>    <span class="mi">5293169</span>
+             <span class="mi">9</span> <span class="o">-</span> <span class="mi">16</span>  <span class="mi">1553664</span>   <span class="mi">23614125</span>
+            <span class="mi">17</span> <span class="o">-</span> <span class="mi">32</span> <span class="mi">17465509</span>  <span class="mi">509454895</span>
+            <span class="mi">33</span> <span class="o">-</span> <span class="mi">64</span> <span class="mi">27282873</span> <span class="mi">1445865086</span>
+           <span class="mi">65</span> <span class="o">-</span> <span class="mi">128</span>  <span class="mi">9489792</span>  <span class="mi">801787796</span>
+          <span class="mi">129</span> <span class="o">-</span> <span class="mi">256</span>  <span class="mi">3506871</span>  <span class="mi">567321439</span>
+          <span class="mi">257</span> <span class="o">-</span> <span class="mi">512</span>   <span class="mi">436393</span>  <span class="mi">143560935</span>
+         <span class="mi">513</span> <span class="o">-</span> <span class="mi">1024</span>   <span class="mi">347668</span>  <span class="mi">257207137</span>
+        <span class="mi">1025</span> <span class="o">-</span> <span class="mi">2048</span>   <span class="mi">410159</span>  <span class="mi">466041685</span>
+        <span class="mi">2049</span> <span class="o">-</span> <span class="mi">4096</span>   <span class="mi">135294</span>  <span class="mi">348213256</span>
+        <span class="mi">4097</span> <span class="o">-</span> <span class="mi">8192</span>   <span class="mi">194711</span> <span class="mi">1026937305</span>
+       <span class="mi">8193</span> <span class="o">-</span> <span class="mi">16384</span>    <span class="mi">27027</span>  <span class="mi">278236057</span>
+      <span class="mi">16385</span> <span class="o">-</span> <span class="mi">32768</span>     <span class="mi">8910</span>  <span class="mi">183592671</span>
+      <span class="mi">32769</span> <span class="o">-</span> <span class="mi">65536</span>     <span class="mi">4409</span>  <span class="mi">200267665</span>
+     <span class="mi">65537</span> <span class="o">-</span> <span class="mi">131072</span>     <span class="mi">2699</span>  <span class="mi">228614855</span>
+    <span class="mi">131073</span> <span class="o">-</span> <span class="mi">262144</span>     <span class="mi">1478</span>  <span class="mi">277347497</span>
+    <span class="mi">262145</span> <span class="o">-</span> <span class="mi">524288</span>     <span class="mi">1093</span>  <span class="mi">306727390</span>
+   <span class="mi">524289</span> <span class="o">-</span> <span class="mi">1048576</span>      <span class="mi">104</span>   <span class="mi">75269351</span>
+  <span class="mi">1048577</span> <span class="o">-</span> <span class="mi">2097152</span>       <span class="mi">58</span>   <span class="mi">83804159</span>
+  <span class="mi">2097153</span> <span class="o">-</span> <span class="mi">4194304</span>       <span class="mi">37</span>  <span class="mi">106320012</span>
+  <span class="mi">4194305</span> <span class="o">-</span> <span class="mi">8388608</span>        <span class="mi">8</span>   <span class="mi">44335352</span>
+ <span class="mi">8388609</span> <span class="o">-</span> <span class="mi">16777216</span>        <span class="mi">6</span>   <span class="mi">69695438</span>
+<span class="mi">16777217</span> <span class="o">-</span> <span class="mi">33554432</span>        <span class="mi">3</span>   <span class="mi">55391152</span>
+</pre></div>
+</div>
+<p>This tells us that there was a huge number of allocations of 256 bytes or less, which means that we
+can use a small sampling rate and still get good data, perhaps 1e-5. There seems to be a spike in
+memory usage in the 4096-8192 byte range, and generally the 256-8192 byte range has a few hundred
+thousand allocations, so we could sample it at a rate of 0.1 or 0.01. Beyond that, the counts drop
+off radically, and so sampling would be a bad idea. This suggests a sampling rate of
+<code class="docutils literal notranslate"><span class="pre">{256:</span> <span class="pre">1e-5,</span> <span class="pre">8192:</span> <span class="pre">0.1}</span></code> for this program. You can set this by running</p>
+<p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">heapprof</span> <span class="pre">-o</span> <span class="pre">&lt;filename&gt;</span> <span class="pre">--sample</span> <span class="pre">'{256:1e-5,</span> <span class="pre">8192:0.1}</span> <span class="pre">--</span> <span class="pre">mycommand.py</span> <span class="pre">args...</span></code></p>
+<p>or</p>
+<p><code class="docutils literal notranslate"><span class="pre">heapprof.start('filename',</span> <span class="pre">{256:</span> <span class="pre">1e-5,</span> <span class="pre">8192:</span> <span class="pre">0.1})</span></code></p>
+<p>Some tips for choosing a good sampling rate:</p>
+<ul class="simple">
+<li><p>The most expensive part of logging isn’t writing the events, it’s writing the stack traces.
+Generally, very small allocations happen at a huge variety of stack traces (nearly every time
+you instantiate a Python variable!), but larger ones are far less common. This means that it’s
+usually very important to keep the sampling rate low for very small byte sizes – say, no more
+than 1e-4 below 64 bytes, and preferably up to 128 bytes – but much less important to keep it
+low for larger byte sizes.</p></li>
+<li><p>The only reason you want to keep the sampling rate low is for performance; if at any point you can
+get away with a bigger sampling rate, err on that side.</p></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Advanced heapprof</a><ul>
+<li><a class="reference internal" href="#controlling-sampling">Controlling Sampling</a></li>
+</ul>
+</li>
+</ul>
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation index</a><ul>
+      <li>Previous: <a href="visualizing_results.html" title="previous chapter">Visualizing and interpreting results</a></li>
+      <li>Next: <a href="api/index.html" title="next chapter">The heapprof API</a></li>
+  </ul></li>
+</ul>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/advanced_heapprof.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  
+  </body>
+</html>
