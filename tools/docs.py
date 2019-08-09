@@ -10,7 +10,10 @@ from _common import REPO_ROOT
 
 
 def findCommand(commandName: str) -> bool:
-    return subprocess.run(f'which {commandName}', shell=True).returncode == 0
+    return (
+        subprocess.run(f'which {commandName}', shell=True, stdout=subprocess.DEVNULL).returncode
+        == 0
+    )
 
 
 def ensureRequirements() -> bool:
