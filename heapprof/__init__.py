@@ -22,10 +22,9 @@ def start(filebase: str, samplingRate: Optional[Dict[int, float]] = None) -> Non
             performance reasons.
         samplingRate: A dict from byte size to sampling probability. Each byte size is interpreted
             as the upper bound of the range, and the sampling probability for byte sizes larger than
-            the largest range given is always 1; thus the default value means:
-                Profile allocations of 1-127 bytes at 1 in 10,000
-                Profile allocations of 128-8191 bytes at 1 in 10
-                Profile all allocations of 8192 or more bytes
+            the largest range given is always 1; thus the default value means to profile allocations
+            of 1-127 bytes at 1 in 10,000, to profile allocations of 128-8,191 bytes at 1 in 10, and
+            to profile all allocations of 8,192 bytes or more.
 
     Raises:
         TypeError: If samplingRate is not a mapping of the appropriate type.
@@ -47,8 +46,7 @@ def gatherStats() -> None:
 
 
 def stop() -> None:
-    """
-    Stop the heap profiler.
+    """Stop the heap profiler.
 
     NB that if the program exits, this will be implicitly called.
     """
@@ -60,9 +58,21 @@ def isProfiling() -> bool:
     return _heapprof.isProfiling()
 
 
-def read(filebase: str) -> Reader:
-    """Open a reader, and create a digest for it if needed."""
+def read(filebase: str, timeInterval: float = 60, precision: float = 0.01) -> Reader:
+    """Open a reader, and create a digest for it if needed.
+
+    Args:
+        filebase: The name of the file to open; the same as the argument passed to start().
+
+    Args which apply only if you're creating the digest (i.e., opening it for the first time):
+        timeInterval: The time interval between successive snapshots to store in the digest,
+            in seconds.
+        precision: At each snapshot, stack traces totalling up to this fraction of total
+            memory used at that frame may be dropped into the "other stack trace" bucket.
+            This can greatly shrink the size of the digest at no real cost in usefulness.
+            Must be in [0, 1); a value of zero means nothing is dropped.
+    """
     r = Reader(filebase)
     if not r.hasDigest():
-        r.makeDigest(verbose=True)
+        r.makeDigest(timeInterval=timeInterval, precision=precision, verbose=True)
     return r

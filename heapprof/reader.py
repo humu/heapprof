@@ -16,29 +16,29 @@ class Reader(object):
 
         # If you want access to the low-level API, you can use the hpm, hpd, and hpc variables. No
         # harm will come to you from doing so; Reader is just a simpler interface on top of them.
-        self.hpm = HPM(filebase)
-        self.hpd = HPD(filebase, self.hpm)
-        self.hpc: Optional[HPC] = None
+        self._hpm = HPM(filebase)
+        self._hpd = HPD(filebase, self._hpm)
+        self._hpc: Optional[HPC] = None
 
         self._openHPC()
 
     def hasDigest(self) -> bool:
-        """Test if this Reader already has a digest (i.e. an .hpc file). If not, you can create one
+        """Test if this Reader already has a digest (i.e. an ._hpc file). If not, you can create one
         using makeDigest; this is a slow operation (O(minutes), usually) so isn't done on its own.
         """
-        return self.hpc is not None
+        return self._hpc is not None
 
     def makeDigest(
         self, timeInterval: float = 60, precision: float = 0.01, verbose: bool = False
     ) -> None:
-        """Parse the .hpm and .hpd files to form a digest. You need to do this before most of the
+        """Parse the ._hpm and ._hpd files to form a digest. You need to do this before most of the
         methods will work.
 
         NB that this method deliberately does *not* check self.hasDigest(); you can use this to
         stomp an existing digest and create a new one.
 
         NB also that if this function is interrupted (say, with a ctrl-C) it should still yield a
-        valid .hpc file; the file will just stop at whatever time makeDigest() has gotten up to by
+        valid ._hpc file; the file will just stop at whatever time makeDigest() has gotten up to by
         the time it was stopped. This doesn't apply if the function is interrupted in a way that
         kills the interpreter midway through, like kill -9'ing the process, though.
 
@@ -51,7 +51,7 @@ class Reader(object):
                 Must be in [0, 1); a value of zero means nothing is dropped.
             verbose: If true, prints status information to stderr as it runs.
         """
-        self.hpc = None
+        self._hpc = None
         try:
             HPC.make(self.filebase, timeInterval, precision, verbose)
         finally:
@@ -67,7 +67,7 @@ class Reader(object):
     # These functions are the "high-level API" to the profile, which speaks in terms of Snapshots --
     # the state of the heap as a function of time. If you want to do your own analysis, this is a
     # great place to start. If you want to drill down to the level of individual alloc and free
-    # events, use the low-level API exposed by self.hpm and self.hpd.
+    # events, use the low-level API exposed by self._hpm and self._hpd.
     #
     # The analytics functions (after this section) provide even more high-level API, letting you
     # look at things like graphs of program nodes programmatically. Anything the visualization tools
@@ -77,7 +77,7 @@ class Reader(object):
         """Return the time, in seconds since the epoch, when the program run started. This is useful
         if you want to compare this to logs data.
         """
-        return self.hpm.initialTime
+        return self._hpm.initialTime
 
     def finalTime(self) -> float:
         """Return the time, in seconds since the epoch, of the last snapshot stored."""
@@ -85,42 +85,57 @@ class Reader(object):
 
     def elapsedTime(self) -> float:
         """Return the relative time between program start and the last snapshot."""
-        assert self.hpc is not None
-        return len(self.hpc) * self.hpc.timeInterval
+        assert self._hpc is not None
+        return len(self._hpc) * self._hpc.timeInterval
 
     def samplingRate(self) -> Dict[int, float]:
         """Return the sampling rate parameters passed to the profiler."""
-        return self.hpm.samplingRate
+        return self._hpm.samplingRate
 
     def snapshotInterval(self) -> float:
         """Return the time interval, in seconds, between successive time snapshots in the digest.
         """
-        assert self.hpc is not None
-        return self.hpc.timeInterval
+        assert self._hpc is not None
+        return self._hpc.timeInterval
 
     def trace(self, traceindex: int) -> Optional[HeapTrace]:
         """Given a trace index (of a sort which you can get from various other functions), return a
         proper stack trace. A value of None means that we have no trace stored for this index.
         """
-        return self.hpm.trace(traceindex)
+        return self._hpm.trace(traceindex)
 
     def rawTrace(self, traceindex: int) -> Optional[RawTrace]:
         """Like trace(), but the raw trace doesn't include the actual lines of code, so is cheaper
         to fetch.
         """
-        return self.hpm.rawTrace(traceindex)
+        return self._hpm.rawTrace(traceindex)
 
     def snapshots(self) -> Sequence[Snapshot]:
         """Return a sequence of all the time snapshots in the digest."""
-        assert self.hpc is not None
-        return self.hpc
+        assert self._hpc is not None
+        return self._hpc
 
     def snapshotAt(self, relativeTime: float) -> Snapshot:
         """Return the snapshot closest in time (rounding down) to the indicated relative time.
         """
-        assert self.hpc is not None
-        index = max(0, min(math.floor(relativeTime / self.hpc.timeInterval), len(self.hpc) - 1))
-        return self.hpc[index]
+        assert self._hpc is not None
+        index = max(0, min(math.floor(relativeTime / self._hpc.timeInterval), len(self._hpc) - 1))
+        return self._hpc[index]
+
+    @property
+    def hpm(self) -> HPM:
+        """Access to the low-level HPM interface."""
+        return self._hpm
+
+    @property
+    def hpd(self) -> HPD:
+        """Access to the low-level HPD interface."""
+        return self._hpd
+
+    @property
+    def hpc(self) -> HPC:
+        """Access to the low-level HPC interface."""
+        return self._hpc
 
     def fastGetUsage(
         self, snapshot: Snapshot, lines: Tuple[RawTraceLine, ...], cumulative: bool = True
@@ -246,9 +261,10 @@ class Reader(object):
                 The lines may be specified either as RawTraceLine, or as "filename:lineno". This
                 latter form is provided for convenience while debugging.
         """
+        lines = lines or {}
         times: List[float] = []
         totalUsage: List[int] = []
-        lineValues: List[List[int]] = [[] for i in range(len(lines))] if lines else []
+        lineValues: List[List[int]] = [[] for i in range(len(lines))]
 
         labels = sorted(list(lines.keys()))
         traceLines = tuple(RawTraceLine.parse(lines[label]) for label in labels)
@@ -286,7 +302,7 @@ class Reader(object):
         Use this method if you want a graph visualization of your data.
 
         NB: The first call to flowGraph on a Reader may be a bit slow, because it has to load up
-        all the stack traces from the .hpm file; once that cache is warm, future reads will be much
+        all the stack traces from the ._hpm file; once that cache is warm, future reads will be much
         faster.
         """
         nodeLocalUsage: Dict[RawTraceLine, int] = defaultdict(int)
@@ -298,7 +314,7 @@ class Reader(object):
             totalUsage += size
 
             # Grab the stack trace. If there is none, we only account for it in the total.
-            rawTrace = self.hpm.rawTrace(traceindex)
+            rawTrace = self._hpm.rawTrace(traceindex)
             if rawTrace is None:
                 continue
 
@@ -378,7 +394,7 @@ class Reader(object):
     def _openHPC(self) -> None:
         """Try to open the .hpc file."""
         try:
-            self.hpc = self.hpc or HPC(self.filebase, self.hpm)
+            self._hpc = self._hpc or HPC(self.filebase, self._hpm)
         except (FileNotFoundError, ValueError):
             # These mean that either the file is absent or corrupt.
             pass
