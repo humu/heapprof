@@ -1,0 +1,176 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>The top-level heapprof package &#8212; heapprof  documentation</title>
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="heapprof.reader: The high-level API" href="reader.html" />
+    <link rel="prev" title="The heapprof API" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reader.html" title="heapprof.reader: The high-level API"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="The heapprof API"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">heapprof  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The heapprof API</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-heapprof">
+<span id="the-top-level-heapprof-package"></span><h1>The top-level heapprof package<a class="headerlink" href="#module-heapprof" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="heapprof.start">
+<code class="sig-prename descclassname">heapprof.</code><code class="sig-name descname">start</code><span class="sig-paren">(</span><em class="sig-param">filebase: str</em>, <em class="sig-param">samplingRate: Optional[Dict[int</em>, <em class="sig-param">float]] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start heapprof in profiling (normal) mode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filebase</strong> – The outputs will be written to filebase.{hpm, hpd}, a pair of local files which
+can later be read using the HeapProfile class. NB that these must be local files for
+performance reasons.</p></li>
+<li><p><strong>samplingRate</strong> – A dict from byte size to sampling probability. Each byte size is interpreted
+as the upper bound of the range, and the sampling probability for byte sizes larger than
+the largest range given is always 1; thus the default value means to profile allocations
+of 1-127 bytes at 1 in 10,000, to profile allocations of 128-8,191 bytes at 1 in 10, and
+to profile all allocations of 8,192 bytes or more.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError</strong> – If samplingRate is not a mapping of the appropriate type.</p></li>
+<li><p><strong>ValueError</strong> – If samplingRate contains repeated entries.</p></li>
+<li><p><strong>RuntimeError</strong> – If the profiler is already running.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="heapprof.gatherStats">
+<code class="sig-prename descclassname">heapprof.</code><code class="sig-name descname">gatherStats</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.gatherStats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start heapprof in stats gathering mode.</p>
+<p>When the profiler is stopped, this will print out statistics on the size distribution of memory
+allocations. This can be useful for choosing sampling rates for profiling.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="heapprof.stop">
+<code class="sig-prename descclassname">heapprof.</code><code class="sig-name descname">stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop the heap profiler.</p>
+<p>NB that if the program exits, this will be implicitly called.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="heapprof.isProfiling">
+<code class="sig-prename descclassname">heapprof.</code><code class="sig-name descname">isProfiling</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#heapprof.isProfiling" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test if the heap profiler is currently running.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="heapprof.read">
+<code class="sig-prename descclassname">heapprof.</code><code class="sig-name descname">read</code><span class="sig-paren">(</span><em class="sig-param">filebase: str</em>, <em class="sig-param">timeInterval: float = 60</em>, <em class="sig-param">precision: float = 0.01</em><span class="sig-paren">)</span> &#x2192; heapprof.reader.Reader<a class="headerlink" href="#heapprof.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open a reader, and create a digest for it if needed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filebase</strong> – The name of the file to open; the same as the argument passed to start().</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Args which apply only if you’re creating the digest (i.e., opening it for the first time):</dt><dd><dl class="simple">
+<dt>timeInterval: The time interval between successive snapshots to store in the digest,</dt><dd><p>in seconds.</p>
+</dd>
+<dt>precision: At each snapshot, stack traces totalling up to this fraction of total</dt><dd><p>memory used at that frame may be dropped into the “other stack trace” bucket.
+This can greatly shrink the size of the digest at no real cost in usefulness.
+Must be in [0, 1); a value of zero means nothing is dropped.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">The heapprof API</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="reader.html"
+                        title="next chapter">heapprof.reader: The high-level API</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/heapprof.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reader.html" title="heapprof.reader: The high-level API"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="The heapprof API"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">heapprof  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The heapprof API</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Yonatan Zunger.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>

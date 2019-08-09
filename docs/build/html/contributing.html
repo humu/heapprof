@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Contributing to heapprof &#8212; heapprof  documentation</title>
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="MIT License" href="license.html" />
+    <link rel="prev" title="heapprof.lowlevel: The low-level API" href="api/lowlevel.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="license.html" title="MIT License"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="api/lowlevel.html" title="heapprof.lowlevel: The low-level API"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">heapprof  documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <p><a class="reference internal" href="code_of_conduct.html"><span class="doc"></span></a></p>
+<div class="section" id="contributing-to-heapprof">
+<h1>Contributing to heapprof<a class="headerlink" href="#contributing-to-heapprof" title="Permalink to this headline">¶</a></h1>
+<p>heapprof is an open source project distributed under the <a class="reference internal" href="license.html"><span class="doc">MIT License</span></a>. Discussions,
+questions, and feature requests should be done via the
+<a class="reference external" href="https://github.com/humu-com/heapprof/issues">GitHub issues page</a>.</p>
+<p>Pull requests for bugfixes and features are welcome!</p>
+<ul class="simple">
+<li><p>Generally, you should discuss features or API changes on the tracking issue first, to make sure
+everyone is aligned on direction.</p></li>
+<li><p>Lint and style:</p>
+<ul>
+<li><p>Python code should follow PEP8+<a class="reference external" href="https://github.com/python/black">Black</a>
+formatting, and should pass mypy with strict type checking.</p></li>
+<li><p>C/C++ code should follow the
+<a class="reference external" href="https://google.github.io/styleguide/cppguide.html">Google C++ Style Guide</a>.</p></li>
+<li><p>You can check a client against the same lint checks run by the continuous integration test by
+running <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">tools/lint.py</span></code>; if you add <code class="docutils literal notranslate"><span class="pre">--fix</span></code>, it will try to fix any errors it can
+in-place.</p></li>
+</ul>
+</li>
+<li><p>Unittests are highly desired and should be invocable by <code class="docutils literal notranslate"><span class="pre">setup.py</span> <span class="pre">test</span></code>.</p></li>
+<li><p>Documentation: Any changes should be reflected in the documentation! Remember:</p>
+<ul>
+<li><p>All Python modules should have clear docstrings for all public methods and variables. Classes
+should be organized with the interface first, and implementation details later.</p></li>
+<li><p>If you’re adding any new top-level modules, add corresponding .rst files in <code class="docutils literal notranslate"><span class="pre">docs/api</span></code> and link
+to them from <code class="docutils literal notranslate"><span class="pre">docs/api/index.rst</span></code>.</p></li>
+<li><p>Any other changes should be reflected in the documentation in <code class="docutils literal notranslate"><span class="pre">docs</span></code>.</p></li>
+<li><p>After changing the documentation, you can rebuild the HTML by running <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">tools/docs.py</span></code>.</p></li>
+<li><p>If you want to see how the documentation looks before pushing, install
+<a class="reference external" href="https://jekyllrb.com/docs/installation/">Jekyll</a> locally, then from the root directory of
+this repository, run <code class="docutils literal notranslate"><span class="pre">bundle</span> <span class="pre">exec</span> <span class="pre">jekyll</span> <span class="pre">serve</span></code>. This will serve the same images that will be
+served in production on <code class="docutils literal notranslate"><span class="pre">localhost:4000</span></code>.</p></li>
+</ul>
+</li>
+</ul>
+<div class="section" id="code-of-conduct">
+<h2>Code of Conduct<a class="headerlink" href="#code-of-conduct" title="Permalink to this headline">¶</a></h2>
+<p>Most importantly, heapprof is released with a <a class="reference internal" href="code_of_conduct.html"><span class="doc">Contributor Code of Conduct</span></a>. By
+participating in this product, you agree to abide by its terms. This code also governs behavior on
+the mailing list. We take this very seriously, and will enforce it gleefully.</p>
+</div>
+<div class="section" id="desiderata">
+<h2>Desiderata<a class="headerlink" href="#desiderata" title="Permalink to this headline">¶</a></h2>
+<p>Some known future features that we’ll probably want:</p>
+<ul class="simple">
+<li><p>Provide additional file formats of output to work with other kinds of visualization.</p></li>
+<li><p>Measure and tune system performance.</p></li>
+<li><p>Make the process of picking sampling rates less manual.</p></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Contributing to heapprof</a><ul>
+<li><a class="reference internal" href="#code-of-conduct">Code of Conduct</a></li>
+<li><a class="reference internal" href="#desiderata">Desiderata</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="api/lowlevel.html"
+                        title="previous chapter">heapprof.lowlevel: The low-level API</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="license.html"
+                        title="next chapter">MIT License</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/contributing.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="license.html" title="MIT License"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="api/lowlevel.html" title="heapprof.lowlevel: The low-level API"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">heapprof  documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Yonatan Zunger.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>

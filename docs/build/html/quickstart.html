@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>heapprof quickstart &#8212; heapprof  documentation</title>
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Using heapprof" href="using_heapprof.html" />
+    <link rel="prev" title="heapprof: A Logging Heap Profiler" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="using_heapprof.html" title="Using heapprof"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="heapprof: A Logging Heap Profiler"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">heapprof  documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="heapprof-quickstart">
+<h1>heapprof quickstart<a class="headerlink" href="#heapprof-quickstart" title="Permalink to this headline">¶</a></h1>
+<p>You can install heapprof by running</p>
+<p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">heapprof</span></code></p>
+<p>The simplest way to get a heap profile for your program is to run</p>
+<p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">heapprof</span> <span class="pre">-o</span> <span class="pre">&lt;filename&gt;</span> <span class="pre">--</span> <span class="pre">mycommand.py</span> <span class="pre">args...</span></code></p>
+<p>This will run your command and write the output to the files <code class="docutils literal notranslate"><span class="pre">&lt;filename&gt;.hpm</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;filename&gt;.hpd</span></code>.
+(Collectively, the “hpx files”) Alternatively, you can control heapprof programmatically:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">heapprof</span>
+
+<span class="n">heapprof</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="s1">&#39;filename&#39;</span><span class="p">)</span>
+<span class="o">...</span> <span class="n">do</span> <span class="n">something</span> <span class="o">...</span>
+<span class="n">heapprof</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>You can analyze hpx files with the analysis and visualization tools built in to heapprof, or use its
+APIs to dive deeper into your program’s memory usage yourself. For example, you might do this with
+the built-in visualization tools:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">heapprof</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">heapprof</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;filename&#39;</span><span class="p">)</span>
+
+<span class="c1"># Generate a plot of total memory usage over time. This command requires that you first pip install</span>
+<span class="c1"># matplotlib.</span>
+<span class="n">r</span><span class="o">.</span><span class="n">timePlot</span><span class="p">()</span><span class="o">.</span><span class="n">pyplot</span><span class="p">()</span>
+
+<span class="c1"># Looks like something interested happened 300 seconds in. You can look at the output as a Flame</span>
+<span class="c1"># graph and view it in a tool like speedscope.app.</span>
+<span class="n">r</span><span class="o">.</span><span class="n">writeFlameGraph</span><span class="p">(</span><span class="s1">&#39;flame-300.txt&#39;</span><span class="p">,</span> <span class="mi">300</span><span class="p">)</span>
+
+<span class="c1"># Or you can look at the output as a Flow graph and view it using graphviz. (See graphviz.org)</span>
+<span class="n">r</span><span class="o">.</span><span class="n">flowGraphAt</span><span class="p">(</span><span class="mi">300</span><span class="p">)</span><span class="o">.</span><span class="n">asDotFile</span><span class="p">(</span><span class="s1">&#39;300.dot&#39;</span><span class="p">)</span>
+
+<span class="c1"># Maybe you&#39;d like to compare three times and see how memory changed. This produces a multi-time</span>
+<span class="c1"># Flow graph.</span>
+<span class="n">r</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span><span class="s1">&#39;compare.dot&#39;</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">flowGraphAt</span><span class="p">(</span><span class="mi">240</span><span class="p">),</span> <span class="n">r</span><span class="o">.</span><span class="n">flowGraphAt</span><span class="p">(</span><span class="mi">300</span><span class="p">),</span> <span class="n">r</span><span class="o">.</span><span class="n">flowGraphAt</span><span class="p">(</span><span class="mi">500</span><span class="p">))</span>
+
+<span class="c1"># Or maybe you found some lines of code where memory use seemed to shift interestingly.</span>
+<span class="n">r</span><span class="o">.</span><span class="n">timePlot</span><span class="p">({</span>
+  <span class="s1">&#39;read_data&#39;</span><span class="p">:</span> <span class="s1">&#39;/home/wombat/myproject/io.py:361&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;write_buffer&#39;</span><span class="p">:</span> <span class="s1">&#39;/home/wombat/myproject/io.py:582&#39;</span><span class="p">,</span>
+<span class="p">})</span>
+</pre></div>
+</div>
+<p>One thing you’ll notice in the above is that visualization tools require you to install extra
+packages – that’s a way to keep heapprof’s dependencies down.</p>
+<p>To learn more, continue on to <a class="reference internal" href="using_heapprof.html"><span class="doc">Using heapprof</span></a></p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">heapprof: A Logging Heap Profiler</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="using_heapprof.html"
+                        title="next chapter">Using heapprof</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/quickstart.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="using_heapprof.html" title="Using heapprof"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="heapprof: A Logging Heap Profiler"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">heapprof  documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Yonatan Zunger.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>

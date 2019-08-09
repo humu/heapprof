@@ -1,0 +1,304 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>heapprof.flow_graph: The FlowGraph class &#8212; heapprof  documentation</title>
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="heapprof.lowlevel: The low-level API" href="lowlevel.html" />
+    <link rel="prev" title="heapprof.types: Common definitions" href="types.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="lowlevel.html" title="heapprof.lowlevel: The low-level API"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="types.html" title="heapprof.types: Common definitions"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">heapprof  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The heapprof API</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-heapprof.flow_graph">
+<span id="heapprof-flow-graph-the-flowgraph-class"></span><h1>heapprof.flow_graph: The FlowGraph class<a class="headerlink" href="#module-heapprof.flow_graph" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="heapprof.flow_graph.FlowGraph">
+<em class="property">class </em><code class="sig-prename descclassname">heapprof.flow_graph.</code><code class="sig-name descname">FlowGraph</code><a class="headerlink" href="#heapprof.flow_graph.FlowGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>A FlowGraph is one of the basic ways to analyze how memory was being used by a process at a
+snapshot of time. If you’ve ever used a graph view of a CPU or memory profiler, this will be
+familiar. Essentially, you can imagine the state of the process as a moment as a directed graph,
+where each node represents a line of code at which either some memory was being allocated, or
+some other function was being called.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>The “local usage” at a node is the amount of memory that has been allocated at that
+precise line of code. It is, of course, nonzero only for lines that actually allocate
+memory, and the sum of local usage over all nodes is the total memory usage. In terms of
+stack traces, it’s the total allocation at all stack traces which <em>end</em> at this particular
+line of code.</p></li>
+<li><p>The “cumulative usage” for a node is the amount of memory that is allocated by this node,
+and by all lines called from it. It is, therefore, going to be largest at the top of the
+graph, and if there’s a single root line of code (which there is iff the program is
+single-threaded), the cumulative usage for the topmost node is equal to the total usage of
+the program. In terms of stack traces, it’s the total allocation at all stack traces which
+<em>contain</em> this particular line of code.</p></li>
+<li><p>The weight of an edge between two lines of code A and B is the total amount of memory
+allocated by operations that go from A directly to B in their stack trace – that is, it’s
+the total allocation of stack traces which contain the sequence “AB” with nothing in
+between.</p></li>
+</ul>
+</div></blockquote>
+<p>Why is this definition of an edge weight useful? Because it has the nice property that for any
+node, the sum of all incoming edge weights is equal to the local weight of the node plus the sum
+of all outgoing edge weights – i.e., it shows how much memory usage “flows through” that edge.
+For example, say that at a given point in time, our memory usage showed that memory had been
+allocated at the following stack traces, where letters denote lines of code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>AD=16                    0/73 A---- 57       10 ----B 0/10
+ACD=17                        |    ＼  24/67   /
+ACE=19    == Graph ==&gt;     16 |     ---&gt; C &lt;---
+AC=21                         |         / ＼
+BC=3                          v     24 /   ＼19
+BCD=7                   40/40 D&lt;-------     -------&gt;E 19/19
+</pre></div>
+</div>
+<p>The ASCII graph shows for each node, “local / cumulative”, and for each edge, the edge weight.
+This means, for example, that node A allocated no memory itself, but 73 bytes of allocation
+stream from it; those divide up into 16 via calls from A directly to D, and the other 57 in
+calls from A to C. Node C, on the other hand, directly allocates 24 bytes, and indirectly
+another 24 in calls to D and 19 in calls to E. Most of the immediate allocation of memory
+happens at D, which directly allocates 40 bytes.</p>
+<p>In the most useful visual representation, these are output as a graph, where the size of each
+node is proportional to its local size – that lets you visually see exactly where most of the
+memory has been allocated at a glance, with line thicknesses (set by edge weight) showing you
+the primary flows of code which led there. That latter is important when there are multiple
+paths to a node; for example, in the diagram above, the A→C call path is much more significant
+than the B→C one!</p>
+<p>You can also compare FlowGraphs computed at two different times, and this can give critical
+insight into time dependencies. For example, say that your program has a natural flow of data
+where data is allocated (say, read in from disk) at point A, processed through stages B, C, and
+D, then written to a buffer at line E, and the output finally committed to disk and deallocated
+at line F. Say also that at some moment in time, overall memory usage for your program spikes.
+If the before and after of the spike were both during this processing flow (as opposed to, say,
+“before the flow vs during the flow,” in which case the problem would be obvious), it can be
+very useful to compare the <em>fraction</em> of total memory allocated at A, B, C, D, E, and F, as well
+as total memory usage T, during the before and during snapshots.</p>
+<p>For example, if the fractions for A-F were all roughly the same both before and during the
+memory spike, this would tell you that during the spike, a lot more data is being read in, but
+the rest of the flow is proceeding as usual. If, on the other hand, the fractions for D, E, and
+F dropped during the spike, that would mean that less data (proportionally) was reaching them,
+which would imply that data was being held up at point C during the spike more than it was
+before – a good hint as to where the problem might lie. Conversely, if fractional memory
+usage at D, E, and F was <em>higher</em> during the spike than before it, that might imply that D was
+generating more data than it was before, creating additional load on E and F. This
+interpretation would have to do with D being a processing stage; if memory usage at E alone were
+higher, that would imply that more memory was building up in the buffer during the spike, which
+might imply that the buffer’s draining at F was not functioning – perhaps the spike was caused
+by a problem in writing the data back out to disk?</p>
+<p>While there isn’t a completely generic tool for doing this analysis, this kind of information
+can be invaluable in tracing down odd phenomena.</p>
+<dl class="method">
+<dt id="heapprof.flow_graph.FlowGraph.nodeLocalUsage">
+<em class="property">property </em><code class="sig-name descname">nodeLocalUsage</code><a class="headerlink" href="#heapprof.flow_graph.FlowGraph.nodeLocalUsage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.flow_graph.FlowGraph.nodeCumulativeUsage">
+<em class="property">property </em><code class="sig-name descname">nodeCumulativeUsage</code><a class="headerlink" href="#heapprof.flow_graph.FlowGraph.nodeCumulativeUsage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.flow_graph.FlowGraph.edgeUsage">
+<em class="property">property </em><code class="sig-name descname">edgeUsage</code><a class="headerlink" href="#heapprof.flow_graph.FlowGraph.edgeUsage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.flow_graph.FlowGraph.totalUsage">
+<em class="property">property </em><code class="sig-name descname">totalUsage</code><a class="headerlink" href="#heapprof.flow_graph.FlowGraph.totalUsage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.flow_graph.FlowGraph.asDotFile">
+<code class="sig-name descname">asDotFile</code><span class="sig-paren">(</span><em class="sig-param">dotFile: TextIO</em>, <em class="sig-param">minNodeFraction: float = 0.01</em>, <em class="sig-param">minEdgeFraction: float = 0.05</em>, <em class="sig-param">collapseNodes: bool = True</em>, <em class="sig-param">sizeNodesBasedOnLocalUsage: bool = True</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.flow_graph.FlowGraph.asDotFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write out a FlowGraph as a dot graph. The result can be visualized using graphviz, with
+a command like</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dot</span> <span class="o">-</span><span class="n">T</span> <span class="n">pdf</span> <span class="o">-</span><span class="n">o</span> <span class="n">foo</span><span class="o">.</span><span class="n">pdf</span> <span class="n">foo</span><span class="o">.</span><span class="n">dot</span>
+</pre></div>
+</div>
+<p>See www.graphviz.org for where you can get graphviz for your system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dotFile</strong> – Where the data should be written.</p></li>
+<li><p><strong>minNodeFraction</strong> – Nodes whose local size is less than this fraction of total usage
+are dropped for visual clarity.</p></li>
+<li><p><strong>minEdgeFraction</strong> – Edges whose size is less than this fraction of their source node’s
+cumulative usage are dropped for visual clarity.</p></li>
+<li><p><strong>collapseNodes</strong> – If True, groups of trace lines that have no branching can get merged
+into each other.</p></li>
+<li><p><strong>sizeNodesBasedOnLocalUsage</strong> – If True, the visual size of nodes in the graph will be
+increased for nodes that allocate memory themselves. This can draw the eye to
+useful information in some circumstances, and distract it in others, so YMMV.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.flow_graph.FlowGraph.writeDotFile">
+<code class="sig-name descname">writeDotFile</code><span class="sig-paren">(</span><em class="sig-param">filename: str</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.flow_graph.FlowGraph.writeDotFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience helper for interactive analysis.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.flow_graph.FlowGraph.compare">
+<em class="property">classmethod </em><code class="sig-name descname">compare</code><span class="sig-paren">(</span><em class="sig-param">dotFileName: str</em>, <em class="sig-param">*usageGraphs</em>, <em class="sig-param">minNodeFraction: float = 0.01</em>, <em class="sig-param">minEdgeFraction: float = 0.05</em>, <em class="sig-param">collapseNodes: bool = True</em>, <em class="sig-param">sizeNodesBasedOnLocalUsage: bool = True</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#heapprof.flow_graph.FlowGraph.compare" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a dot graph comparing multiple FlowGraphs, which usually correspond to multiple
+time snapshots. In the resulting graph, boxes will look like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">|-------------------------------|</span>
+<span class="o">|</span>  <span class="n">filename</span><span class="p">:</span><span class="n">line</span> <span class="n">number</span>         <span class="o">|</span>
+<span class="o">|</span>  <span class="n">filename</span><span class="p">:</span><span class="n">line</span> <span class="n">number</span>         <span class="o">|</span>
+<span class="o">|-------------------------------|</span>
+<span class="o">|</span> <span class="n">Loc</span><span class="o">/</span><span class="n">Cum</span>  <span class="o">|</span> <span class="n">Loc</span><span class="o">/</span><span class="n">Cum</span>  <span class="o">|</span> <span class="n">Loc</span><span class="o">/</span><span class="n">Cum</span> <span class="o">|</span>
+<span class="o">|-------------------------------|</span>
+</pre></div>
+</div>
+<p>Here the sequence of filename:line numbers represents the segment of the stack trace
+represented by this node (multiple lines are fused together if basically nothing interesting
+happens between them), and for each “time stage” (parallel to the graphs we were passed) it
+shows the local and cumulative usage at that node. (Local usage == memory allocated at the
+final line of code in this stack trace; cumulative usage == memory allocated at or below the
+final line of code in this stack trace)</p>
+<p>This function is particularly useful for finding the causes of anomalous memory events. For
+example, imagine that your program is having an overall memory usage spike; you can see this
+on the time plot (which you made using Reader.asTotalUsagePlot), then pick three times –
+before, during, and after the spike – make usage graphs for all three, and plot them:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">heapprof</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">heapprof</span><span class="o">.</span><span class="n">Reader</span><span class="p">(</span><span class="s1">&#39;myfile&#39;</span><span class="p">)</span>
+<span class="n">heapprof</span><span class="o">.</span><span class="n">FlowGraph</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span>
+    <span class="s1">&#39;compare.dot&#39;</span><span class="p">,</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">usageGraphAt</span><span class="p">(</span><span class="mi">1000</span><span class="p">),</span>  <span class="c1"># A time before the spike</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">usageGraphAt</span><span class="p">(</span><span class="mi">2000</span><span class="p">),</span>  <span class="c1"># A time in the middle of the spike</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">usageGraphAt</span><span class="p">(</span><span class="mi">3000</span><span class="p">),</span>  <span class="c1"># A time after the spike</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Then you view this with dot:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dot</span> <span class="o">-</span><span class="n">Tpdf</span> <span class="o">-</span><span class="n">o</span> <span class="n">compare</span><span class="o">.</span><span class="n">pdf</span> <span class="n">compare</span><span class="o">.</span><span class="n">dot</span>
+</pre></div>
+</div>
+<p>Each box on the graph will have three sizes in it, corresponding to the three timestamps;
+those boxes are color-coded from red to blue (corresponding to what fraction of total memory
+they take up at their respective timeslice), and the overall box is sized based on how much
+memory is being allocated directly by that box (as opposed to things that box calls).</p>
+<p>Starting from the top of the graph, there is a box marked “Program Root,” whose cumulative
+usage numbers are total memory usage at those times; perhaps they’re 800MB, 2GB, 800MB.
+Following the lines down, we see that in all cases, the majority of memory usage is along a
+particular route, but the <em>fraction</em> of cumulative memory usage used by various nodes during
+the spike is different from the fraction in the before or after, while the before and after
+tend to be pretty similar to each other.</p>
+<p>In the nodes where the “during” ≫ the “before” or “after,” this is a sign that this is where
+additional memory is being used. In the nodes where the “during” fraction ≪ the “before” or
+“after,” check the raw amounts rather than the ratios – if the number hasn’t changed, the
+fraction will go down, and that’s a sign that this node hasn’t moved.</p>
+<p>You now have an idea of where additional memory is being used during the spike.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dotFileName</strong> – The name of the file to which the output should be written.</p></li>
+<li><p><strong>*usageGraphs</strong> – The sequence of graphs to compare.</p></li>
+<li><p><strong>arguments</strong> (<em>Other</em>) – As for asDotGraph(), above.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="types.html"
+                        title="previous chapter">heapprof.types: Common definitions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="lowlevel.html"
+                        title="next chapter">heapprof.lowlevel: The low-level API</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/flow_graph.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="lowlevel.html" title="heapprof.lowlevel: The low-level API"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="types.html" title="heapprof.types: Common definitions"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">heapprof  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The heapprof API</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Yonatan Zunger.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>

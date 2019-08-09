@@ -8,7 +8,8 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-build/
+# NB: Do **not** ignore docs/build, we need that checked in for Jekyll to see it!
+/build/
 develop-eggs/
 dist/
 downloads/

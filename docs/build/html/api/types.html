@@ -1,0 +1,182 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>heapprof.types: Common definitions &#8212; heapprof  documentation</title>
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="heapprof.flow_graph: The FlowGraph class" href="flow_graph.html" />
+    <link rel="prev" title="heapprof.reader: The high-level API" href="reader.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="flow_graph.html" title="heapprof.flow_graph: The FlowGraph class"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="reader.html" title="heapprof.reader: The high-level API"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">heapprof  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The heapprof API</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-heapprof.types">
+<span id="heapprof-types-common-definitions"></span><h1>heapprof.types: Common definitions<a class="headerlink" href="#module-heapprof.types" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="heapprof.types.RawTraceLine">
+<em class="property">class </em><code class="sig-prename descclassname">heapprof.types.</code><code class="sig-name descname">RawTraceLine</code><a class="headerlink" href="#heapprof.types.RawTraceLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>A RawTraceLine represents a single line of code.</p>
+<dl class="method">
+<dt id="heapprof.types.RawTraceLine.filename">
+<em class="property">property </em><code class="sig-name descname">filename</code><a class="headerlink" href="#heapprof.types.RawTraceLine.filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.types.RawTraceLine.lineno">
+<em class="property">property </em><code class="sig-name descname">lineno</code><a class="headerlink" href="#heapprof.types.RawTraceLine.lineno" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.types.RawTraceLine.parse">
+<em class="property">classmethod </em><code class="sig-name descname">parse</code><span class="sig-paren">(</span><em class="sig-param">value: Union[RawTraceLine, str]</em><span class="sig-paren">)</span> &#x2192; heapprof.types.RawTraceLine<a class="headerlink" href="#heapprof.types.RawTraceLine.parse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="heapprof.types.TraceLine">
+<em class="property">class </em><code class="sig-prename descclassname">heapprof.types.</code><code class="sig-name descname">TraceLine</code><a class="headerlink" href="#heapprof.types.TraceLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>A TraceLine is a RawTraceLine plus the actual line of code. These can be fetched from HPM
+files so long as the source code is also present; doing so is (for obvious reasons) more
+expensive than just working with RawTraces, but can make nicer stack traces.</p>
+<dl class="method">
+<dt id="heapprof.types.TraceLine.filename">
+<em class="property">property </em><code class="sig-name descname">filename</code><a class="headerlink" href="#heapprof.types.TraceLine.filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.types.TraceLine.lineno">
+<em class="property">property </em><code class="sig-name descname">lineno</code><a class="headerlink" href="#heapprof.types.TraceLine.lineno" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.types.TraceLine.fileline">
+<em class="property">property </em><code class="sig-name descname">fileline</code><a class="headerlink" href="#heapprof.types.TraceLine.fileline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="heapprof.types.Snapshot">
+<em class="property">class </em><code class="sig-prename descclassname">heapprof.types.</code><code class="sig-name descname">Snapshot</code><a class="headerlink" href="#heapprof.types.Snapshot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>A Snapshot represents the state of the heap at a single moment in time. These are the basic
+elements of .hpc files.</p>
+<dl class="method">
+<dt id="heapprof.types.Snapshot.relativeTime">
+<em class="property">property </em><code class="sig-name descname">relativeTime</code><a class="headerlink" href="#heapprof.types.Snapshot.relativeTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.types.Snapshot.usage">
+<em class="property">property </em><code class="sig-name descname">usage</code><a class="headerlink" href="#heapprof.types.Snapshot.usage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="heapprof.types.Snapshot.totalUsage">
+<code class="sig-name descname">totalUsage</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#heapprof.types.Snapshot.totalUsage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="reader.html"
+                        title="previous chapter">heapprof.reader: The high-level API</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="flow_graph.html"
+                        title="next chapter">heapprof.flow_graph: The FlowGraph class</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/types.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="flow_graph.html" title="heapprof.flow_graph: The FlowGraph class"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="reader.html" title="heapprof.reader: The high-level API"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">heapprof  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The heapprof API</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Yonatan Zunger.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>

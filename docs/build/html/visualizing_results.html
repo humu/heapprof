@@ -1,0 +1,325 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Visualizing and interpreting results &#8212; heapprof  documentation</title>
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Advanced heapprof" href="advanced_heapprof.html" />
+    <link rel="prev" title="Using heapprof" href="using_heapprof.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="advanced_heapprof.html" title="Advanced heapprof"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="using_heapprof.html" title="Using heapprof"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">heapprof  documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="visualizing-and-interpreting-results">
+<h1>Visualizing and interpreting results<a class="headerlink" href="#visualizing-and-interpreting-results" title="Permalink to this headline">¶</a></h1>
+<p>Heap profiles think about memory in terms of stack traces: where in the execution flow the code was
+when a piece of memory was allocated or freed. In heapprof, stack traces are sequences of (file
+name, line number) pairs; these are the values that were correct while the code was running.
+(heapprof also has “dressed” stack traces which include the text of that line of code; these are
+extracted at analysis time, so they only make sense if the code hasn’t changed)</p>
+<p>Because a single line of code could be reached through many paths, a point in execution is described
+by its full stack trace. This still isn’t fully unique (the same code path is often run through many
+times with different data!) but is a fairly good identifier.</p>
+<p>heapprof also focuses on the lines of code at which a particular piece of memory was <em>allocated</em>. It
+keeps track of when the memory was freed, but not where.</p>
+<blockquote>
+<div><p>Some possible future improvements would be to allow users to annotate stack traces (this requires
+a change to Python), or to have heapprof also track where in the code memory was freed. The second
+would have serious performance implications, so would need a clear use case to justify.</p>
+</div></blockquote>
+<p>You can think of the event log (the <code class="docutils literal notranslate"><span class="pre">.hpd</span></code> file) as a sequence of events that look like (timestamp,
+stack trace ID, amount of memory allocated or freed). The <code class="docutils literal notranslate"><span class="pre">.hpm</span></code> file maps stack trace ID’s to
+actual stack traces. The event digest (the <code class="docutils literal notranslate"><span class="pre">.hpc</span></code> file) is a sequence of snapshots, each of which is
+a dict from trace ID to the amount of memory allocated there which hasn’t yet been freed.</p>
+<p>To understand where your memory is going, there are a few things you often want to look at:</p>
+<ul class="simple">
+<li><p>Is memory suddenly being allocated at one point in the program, or is it gradually creeping up?</p></li>
+<li><p>If memory usage is really high at some point in time, what’s using all that memory? If it’s
+growing, where did the growth come from?</p></li>
+</ul>
+<p>heapprof has three built-in visualization tools to help with this: <a class="reference external" href="#time-plots">time plots</a>, <a class="reference external" href="#flow-graphs">flow
+graphs</a>, and <a class="reference external" href="#flame-graphs">flame graphs</a>. If you need to dig deeper, the
+<a class="reference external" href="#api-access-to-data">API’s</a> let you look at the numbers directly.</p>
+<div class="section" id="time-plots">
+<h2>Time Plots<a class="headerlink" href="#time-plots" title="Permalink to this headline">¶</a></h2>
+<p>Time plots let you view memory changes over time. The simplest way to view one is</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">r</span> <span class="o">=</span> <span class="n">heapprof</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;filebase&#39;</span><span class="p">)</span>
+<span class="n">reader</span><span class="o">.</span><span class="n">timePlot</span><span class="p">()</span><span class="o">.</span><span class="n">pyplot</span><span class="p">()</span>
+</pre></div>
+</div>
+<blockquote>
+<div><p><strong>Note:</strong> The <code class="docutils literal notranslate"><span class="pre">pyplot</span></code> method requires <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code>. See the
+<a class="reference external" href="using_heapprof.md#installation-and-system-requirements">installation instructions</a> for how to
+install it if you don’t already have it.</p>
+</div></blockquote>
+<p>The result looks something like this:</p>
+<p><img alt="A sample time plot" src="_images/timeplot.png" />A sample time plot</p>
+<p>The X-axis is time in seconds, and the Y-axis is memory in bytes. You can see in this image (and by
+either looking at the returned <code class="docutils literal notranslate"><span class="pre">heapprof.Reader.TimePlot</span></code> object or using the pyplot UI) that memory
+usage spiked radically at 3,240 seconds, and drops back down at 5,640 seconds. (These numbers are
+multiples of 60 because the digest was created with a time resolution of 60 seconds, which is
+clearly fine for a job lasting over 12 hours!)</p>
+<p>This plot is often your first place to start analyzing, since it lets you quickly spot times at
+which you want to zoom in more deeply. Later on, you might discover a few lines of code which keep
+showing up as possible culprits (we’ll see how to do that with flow and flame graphs); if you pass
+those to <code class="docutils literal notranslate"><span class="pre">timePlot</span></code>, you can see how they compare.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">r</span> <span class="o">=</span> <span class="n">heapprof</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;filebase&#39;</span><span class="p">)</span>
+<span class="n">reader</span><span class="o">.</span><span class="n">timePlot</span><span class="p">({</span>
+    <span class="s1">&#39;make_proto&#39;</span><span class="p">:</span> <span class="s1">&#39;/Users/zunger/src/code/storage/impl/sba.py:406&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;yield_cells&#39;</span><span class="p">:</span> <span class="s1">&#39;/Users/zunger/src/code/storage/impl/sba.py:417&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;split_keys&#39;</span><span class="p">:</span> <span class="s1">&#39;/Users/zunger/src/code/storage/impl/split.py:57&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;bt_read&#39;</span><span class="p">:</span> <span class="s1">&#39;/Users/zunger/src/code/venv/lib/python3.7/site-packages/google/cloud/bigtable/row_data.py:483&#39;</span><span class="p">,</span>
+<span class="p">})</span><span class="o">.</span><span class="n">pyplot</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This yields a plot like this:</p>
+<p><img alt="A split time plot" src="_images/split_time_plot.png" />A time plot showing individual lines of code</p>
+<p>The top row is the same as the original time plot, showing total memory usage over time. The second
+row shows the number of bytes used by each of the lines of code you selected; the bottom row shows
+the fraction of all bytes used by each of the lines of code. As you can tell from the legend, the
+line labeled <code class="docutils literal notranslate"><span class="pre">bt_read</span></code> is steadily about 40% of all memory usage, including during the spike, while
+the line marked <code class="docutils literal notranslate"><span class="pre">split_keys</span></code> seems to have a more pronounced jump, both in total and fractional
+usage.</p>
+<blockquote>
+<div><p>These are plots from real software! This was a data pipeline reading large volumes from storage.
+<code class="docutils literal notranslate"><span class="pre">bt_read</span></code> is the line in the client library that copies data from the network response into Python
+objects; <code class="docutils literal notranslate"><span class="pre">split_keys</span></code> is the line that’s separating keys from wire data, while <code class="docutils literal notranslate"><span class="pre">make_proto</span></code> and
+<code class="docutils literal notranslate"><span class="pre">yield_cells</span></code> were separating out the values. This says that most of the memory is steadily in the
+buffers coming from the outside world, but during the spike, there are a lot more keys running
+around. As with any debugging, you’ll need intimate knowledge of what your code is logically
+<em>doing</em> at any step to find the issue; heapprof just points you in the right direction.</p>
+</div></blockquote>
+</div>
+<div class="section" id="flow-graphs">
+<h2>Flow Graphs<a class="headerlink" href="#flow-graphs" title="Permalink to this headline">¶</a></h2>
+<p>Flow graphs are directed graphs, where each line of code is represented by a node, and each function
+call is represented by an edge. The “local usage” of a node is how much memory is allocated by
+that line of code; the “cumulative usage” of a node is how much memory is allocated by that line,
+and everything it calls. The usage of an edge is how much memory was allocated by code paths that
+went along that edge. Flow graphs can show memory usage at one or more timestamps on a single view.
+From a distance, they look like this:</p>
+<p><img alt="A zoomed-out flow graph" src="_images/distant_flow_graph.png" />A flow graph zoomed out</p>
+<p>From close up, they look like this:</p>
+<p><img alt="A zoomed-in flow graph" src="_images/zoomed_flow_graph.png" />A flow graph up close</p>
+<p>Each box has three parts:</p>
+<ul class="simple">
+<li><p>The sequence of lines of code. If each call to a single line leads to another single line, and no
+significant memory is being allocated by the individual lines, they’re all grouped together in a
+single box; any memory that’s actually being allocated is (by definition) being allocated by the
+bottommost line.</p></li>
+<li><p>The colored boxes at the bottom show memory counts. Each box has the form “local usage /
+cumulative usage = percent”. Local usage is the amount of memory allocated by that bottommost
+line of code directly. Cumulative usage is the amount of memory allocated by that line, plus by
+any functions called by that line. Percentage is simply the cumulative usage as a percent of
+total memory usage in the program. Each box is color-coded by percentage, moving from blue
+(small usage) to red (high usage). When there are multiple boxes, this corresponds to multiple
+timestamps.</p></li>
+<li><p>The edges coming out of a box indicate different lines of code which could come after this line
+and are the next places where memory is allocated. The number by the edge is the amount of
+memory allocated along this path; if there are multiple numbers, they correspond to multiple
+timestamps.</p></li>
+</ul>
+<p>So in the zoomed-in diagram, we see that <code class="docutils literal notranslate"><span class="pre">bigtable/row_data.py:483</span></code> was allocating 15.1kB of memory.
+(This is a line in a client library which calls a function that processes a single chunk of data
+from the network) After reaching that line, the next line of code which allocates memory is either
+<code class="docutils literal notranslate"><span class="pre">row_data.py:510</span></code> or <code class="docutils literal notranslate"><span class="pre">row_data.py:501</span></code>, which are two different branches of the next function
+called, that handle different possible contents of that data chunk. We see that at timestamp 1, a
+total of 182.9MB was being allocated in the first path, and 444.1MB in the second; by timestamp 2,
+the first one jumped to 542.8MB, while the second jumped only to 579.7MB. Looking at the next boxes,
+we see that the first box jumped from light blue to dark blue, meaning that the jump to 542.8MB also
+meant it now took up a much larger fraction of system memory; the second box went from purple to
+dark blue, meaning that although it took up more bytes, it took up a smaller fraction of total
+usage. That is, in the transition between these two timestamps, suddenly a lot more memory was being
+taken up by the code path that goes through <code class="docutils literal notranslate"><span class="pre">row_data.py:510</span></code>.</p>
+<p>A flow graph for a single timestamp can be created with</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">r</span> <span class="o">=</span> <span class="n">heapprof</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;filebase&#39;</span><span class="p">)</span>
+<span class="n">r</span><span class="o">.</span><span class="n">flowGraphAt</span><span class="p">(</span><span class="mi">3800</span><span class="p">)</span><span class="o">.</span><span class="n">writeDotFile</span><span class="p">(</span><span class="s1">&#39;flow-3800.dot&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>A flow graph comparing multiple timestamps can be created with</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">r</span><span class="o">.</span><span class="n">compareFlowGraphs</span><span class="p">(</span><span class="s1">&#39;flow-3800-vs-4500.dot&#39;</span><span class="p">,</span> <span class="mi">3800</span><span class="p">,</span> <span class="mi">4500</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Dot files can be viewed with <a class="reference external" href="https://graphviz.org">graphviz</a>; on an OS X or UNIX system, for
+example, you would do this with</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dot</span> <span class="o">-</span><span class="n">Tpdf</span> <span class="o">-</span><span class="n">o</span> <span class="n">flow</span><span class="o">-</span><span class="mi">3800</span><span class="o">-</span><span class="n">vs</span><span class="o">-</span><span class="mf">4500.</span><span class="n">pdf</span> <span class="n">flow</span><span class="o">-</span><span class="mi">3800</span><span class="o">-</span><span class="n">vs</span><span class="o">-</span><span class="mf">4500.</span><span class="n">dot</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">writeDotFile</span></code> and <code class="docutils literal notranslate"><span class="pre">compareFlowGraphs</span></code> methods have various options about how the graph will be
+rendered – which lines and edges to suppress as “too small to matter,” and whether the size of
+nodes should be scaled based on their local usage. Local usage scaling has its pros and cons: it
+lets you very quickly see where memory is being allocated, but it draws your eye to the actual line
+where the allocation happens, rather than to the longer code path leading there, which is
+highlighted by colors. Which setting is most useful will vary as you debug a particular situation.</p>
+</div>
+<div class="section" id="flame-graphs">
+<h2>Flame Graphs<a class="headerlink" href="#flame-graphs" title="Permalink to this headline">¶</a></h2>
+<p>Flame graphs were originally designed to view CPU usage, but can also be used to analyze memory.
+heapprof’s preferred tool to view flame graphs is <a class="reference external" href="https://speedscope.app">speedscope</a>. These are
+interactive objects viewed in a browser; a typical flame graph looks like this.</p>
+<p><img alt="_images/flame_graph.png" src="_images/flame_graph.png" />A flame graph zoomed out</p>
+<p>In this diagram, each block represents a line of a stack trace, and its width represents the
+cumulative amount of memory allocated by that line or by lines that follow it. A line is stacked up
+on another line if it follows it. This means that wide blocks are where most of the memory is going,
+so you can quickly see where the biggest memory use is. Unlike a flow graph, however, if a single
+line of code can be reached through multiple paths, each of those paths will show up as a <em>separate</em>
+block on the diagram; this means that if each path contributes a little, the fact that this line is
+a central hub won’t be easily visible.</p>
+<p>To help with that, from the flame graph you can flip to a “sandwich” view which looks like this:</p>
+<p><img alt="_images/flame_graph_sandwich.png" src="_images/flame_graph_sandwich.png" />Sandwich view of a flame graph</p>
+<p>This is simply a list of the lines of code, with cumulative (“total”) and local (“self”) usage
+listed.</p>
+<p>Flame graphs and flow graphs show the same information overall, but they organize it in different
+ways. Flame graphs are good for quickly seeing where the largest lumps are, but they obscure the
+calling paths between lines of code; flow graphs show how memory flows through the system, but don’t
+highlight all types of usage hotspot as vividly. You can (and should!) use both.</p>
+<p>To create a flame graph at a single timestamp, run</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">r</span> <span class="o">=</span> <span class="n">heapprof</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;filebase&#39;</span><span class="p">)</span>
+<span class="n">r</span><span class="o">.</span><span class="n">writeFlameGraph</span><span class="p">(</span><span class="s1">&#39;flame-3800.txt&#39;</span><span class="p">,</span> <span class="mi">3800</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can then open this file either on the <a class="reference external" href="https://speedscope.app">speedscope website</a> or by
+installing and running <a class="reference external" href="https://github.com/jlfwong/speedscope">speedscope</a> locally. In either case,
+you should use the “left heavy” or “snapshot” views; the “time order” view is specific to CPU
+profiling, and produces nonsense for these flame graphs.</p>
+</div>
+<div class="section" id="api-access-to-data">
+<h2>API Access to Data<a class="headerlink" href="#api-access-to-data" title="Permalink to this headline">¶</a></h2>
+<p>If you want to analyze the data in more depth than just visualizing it, you can use the <code class="docutils literal notranslate"><span class="pre">Reader</span></code> API
+to directly process the digested contents of a heap profile. Your most important tools for this are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Reader.snapshotAt</span></code> returns a <code class="docutils literal notranslate"><span class="pre">Snapshot</span></code> of memory usage at a given relative time. Each snapshot
+is simply a dict from trace index (a unique ID for each stack trace that shows up in the
+profile) to the number of live bytes in memory allocated by that stack trace at that time.
+A trace index of zero means “unknown trace;” this generally means that some subtle issue
+prevented the profiler from collecting a trace.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Reader.rawTrace</span></code> and <code class="docutils literal notranslate"><span class="pre">Reader.trace</span></code> go from a trace index to an actual stack trace. The
+difference is that a raw trace contains only file names and line numbers, while a full trace
+also fetches the actual line of code from the file, much like the traces shown in exception
+tracebacks. Full traces can only be pulled if you have the same source files locally, and at the
+same paths; thus they’re generally useful if you’re running the analysis on the same machine
+where you collected the heap profile.</p></li>
+</ul>
+<p>All of the visualization functions above are built on top of this API, so you can look at their
+implementation for inspiration about ways to analyze the data.</p>
+<p>There is also a low-level API which gives you access to the underlying “raw” heap traces, before
+they’ve been digested into snapshots. The useful one of these is <code class="docutils literal notranslate"><span class="pre">Reader.hpd</span></code>. (There are also
+low-level API’s to the <code class="docutils literal notranslate"><span class="pre">hpm</span></code> and <code class="docutils literal notranslate"><span class="pre">hpc</span></code> files, but they don’t provide any particular value above that
+of the high-level API; they’re really implementation details) The <code class="docutils literal notranslate"><span class="pre">HPD</span></code> object is an iterable of
+<code class="docutils literal notranslate"><span class="pre">HPDEvent</span></code> objects, which are the raw items written to disk by the profiler. Each event contains:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">timestamp</span></code>: The timestamp when the event occurred, in seconds since the epoch. (Note that this
+is the absolute time, not the relative timestamp! You can get the global start time from the
+high-level API)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">traceindex</span></code>: The trace index at which the corresponding piece of memory was allocated.
+(Currently, heapprof does not store the trace index at which the memory was freed)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">size</span></code>: The number of bytes allocated or deallocated; this is positive for an allocation event,
+negative for a free event.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">scaleFactor</span></code>: Because heapprof is a sampling heap profiler, not all events are logged. This
+number is a multiplicative scale factor which you should apply to <code class="docutils literal notranslate"><span class="pre">size</span></code> to get an estimate of
+the total number of bytes that were being allocated or freed during that time.</p></li>
+</ul>
+<p>To go into more depth, continue on to <a class="reference internal" href="advanced_heapprof.html"><span class="doc">advanced heapprof</span></a>, or read about the
+<a class="reference internal" href="api/index.html"><span class="doc">API</span></a> in depth.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Visualizing and interpreting results</a><ul>
+<li><a class="reference internal" href="#time-plots">Time Plots</a></li>
+<li><a class="reference internal" href="#flow-graphs">Flow Graphs</a></li>
+<li><a class="reference internal" href="#flame-graphs">Flame Graphs</a></li>
+<li><a class="reference internal" href="#api-access-to-data">API Access to Data</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="using_heapprof.html"
+                        title="previous chapter">Using heapprof</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="advanced_heapprof.html"
+                        title="next chapter">Advanced heapprof</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/visualizing_results.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="advanced_heapprof.html" title="Advanced heapprof"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="using_heapprof.html" title="Using heapprof"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">heapprof  documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Yonatan Zunger.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>
