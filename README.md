@@ -23,6 +23,9 @@ slightly lower overhead, but you have to know the moments at which you'll want a
 program starts. This makes it particularly useful for finding leaks (from the snapshot at program
 exit), but not as good for understanding events like memory spikes.
 
+You can install heapprof with `pip install heapprof`. heapprof is released under the
+[MIT License](https://humu.github.io/heapprof/license.html).
+
 You can read all the documentation at [humu.github.io/heapprof](https://humu.github.io/heapprof).
 
 ## Navigating the Repository
