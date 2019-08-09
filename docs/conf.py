@@ -34,8 +34,9 @@ author = 'Yonatan Zunger'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.coverage',
+    # This allows it to parse normal indentation in docstrings.
     'sphinx.ext.napoleon',
-    'sphinx_jekyll_builder',
+    # This allows it to parse .md files as inputs.
     'recommonmark',
 ]
 
