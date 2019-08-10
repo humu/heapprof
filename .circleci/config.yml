@@ -97,9 +97,9 @@ jobs:
       # Install dependencies, with caching.
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "requirements.txt" }}
+            - win-dependencies-{{ checksum "requirements.txt" }}
             # fallback to using the latest cache if no exact match is found
-            - v1-dependencies-
+            - win-dependencies-
       - run:
           name: install_dependencies
           command: |
@@ -109,7 +109,7 @@ jobs:
       - save_cache:
           paths:
             - venv
-          key: v1-dependencies-{{ checksum "requirements.txt" }}
+          key: win-dependencies-{{ checksum "requirements.txt" }}
 
       - run:
           name: run_tests
