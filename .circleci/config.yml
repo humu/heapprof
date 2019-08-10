@@ -89,7 +89,9 @@ jobs:
   # Use this to cross-compile a Windows binary and make a wheel. The resulting artifacts from
   # release candidates go into PIP.
   buildwin:
-    executor: win/vs2019
+    executor:
+      name: win/vs2019
+      shell: bash.exe
     steps:
       - checkout
       # Install dependencies, with caching.
