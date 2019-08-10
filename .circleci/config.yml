@@ -103,9 +103,9 @@ jobs:
       - run:
           name: install_dependencies
           command: |
-            python -m venv venv
-            . venv/bin/activate
-            pip install --upgrade pip setuptools cmake
+            python.exe -m venv venv
+            source . venv/bin/activate
+            pip.exe install --upgrade pip setuptools cmake
       - save_cache:
           paths:
             - venv
