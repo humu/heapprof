@@ -15,6 +15,9 @@ executors:
       # documented at https://circleci.com/docs/2.0/circleci-images/
       # - image: circleci/mongo:3.4.4
 
+orbs:
+  win: circleci/windows@1.0.0
+
 jobs:
   test:
     executor: humu-ci-docker-image
@@ -82,6 +85,50 @@ jobs:
       - store_artifacts:
           path: test-reports
           destination: test-reports
+
+  # Use this to cross-compile a Windows binary and make a wheel. The resulting artifacts from
+  # release candidates go into PIP.
+  buildwin:
+    executor: win/vs2019
+    steps:
+      - checkout
+      # Install dependencies, with caching.
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "requirements.txt" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+      - run:
+          name: install_dependencies
+          command: |
+            python -m venv venv
+            . venv/bin/activate
+            pip install --upgrade pip setuptools cmake
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies-{{ checksum "requirements.txt" }}
+
+      - run:
+          name: run_tests
+          command: |
+            . venv/bin/activate
+            python setup.py test
+
+      - run:
+          name: build_wheel
+          command: |
+            . venv/bin/activate
+            python setup.py bdist_wheel
+
+      - store_artifacts:
+          path: dist
+          destination: wheel
+
+      - store_artifacts:
+          path: test-reports
+          destination: test-reports
+
 
 workflows:
   version: 2
