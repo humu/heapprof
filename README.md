@@ -41,7 +41,7 @@ most Python packages, this is a maze of twisty subdirectories, all different):
 
 * `heapprof` contains the Python package itself. (The API and visualization logic)
 * `_heapprof` contains the C/C++ package. (The core profiling logic)
-* `docs_src` contains the sources for the documentation, mostly as .md and .rst files.
+* `docs_src` contains the sources for the documentation, mostly as `.md` and `.rst` files.
 * `docs` contains the compiled HTML version of `docs_src`, created with `tools/docs.py` and checked
     in.
 * `tools` contains tools useful when modifying heapprof itself.
@@ -55,7 +55,7 @@ most Python packages, this is a maze of twisty subdirectories, all different):
     * `docs/Makefile` and `docs/conf.py` are the configuration for building the HTML docs image via
         Sphinx.
     * `.circleci` is the configuration for continuous integration testing.
-    * `pyproject.toml` and the root `requirements.txt` make setuptools happy.
+    * `pyproject.toml` and the root `requirements.txt` make `setuptools` happy.
 * Additional directories which are .gitignored but which show up during use:
     * `build` contains C/C++ dependencies and their compiled images; it's managed by `setup.py`.
     * `_site` contains the final Jekyll site which is served for documentation; it's created if you
