@@ -16,6 +16,8 @@ heapprof is a logging, sampling heap profiler for Python 3.7+.
 It comes with a suite of visualization and analysis tools (including time plots, flame graphs, and
 flow graphs), as well as an API for doing your own analyses of the results.
 
+[![screenshot of split time plot](https://humu.github.io/heapprof/_images/split_time_plot.png)](https://humu.github.io/heapprof/visualizing_results.html)
+
 heapprof is complementary to [tracemalloc](https://docs.python.org/3/library/tracemalloc.html),
 which is a snapshotting heap profiler. The difference is that tracemalloc keeps track of live memory
 internally, and only writes snapshots when its snapshot() function is called; this means it has
