@@ -28,6 +28,10 @@ slightly lower overhead, but you have to know the moments at which you'll want a
 program starts. This makes it particularly useful for finding leaks (from the snapshot at program
 exit), but not as good for understanding events like memory spikes.
 
+**NOTE:** The 1.0.0 release of heapprof does not include compiled Windows binaries. You will need to
+have a compiler and Python build environment installed in order to use this package. This will be
+fixed in an upcoming maintenance release.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:

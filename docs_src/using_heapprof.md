@@ -45,6 +45,10 @@ features require additional packages as well:
     `npm install -g speedscope`. (See its [GitHub site](https://github.com/jlfwong/speedscope) for
     more installation details if you aren't familiar with running local JavaScript code)
 
+The 1.0.0 release of heapprof does not contain precompiled Windows images; in order to use this on a
+Windows machine, you will need a C/C++ compilation environment. This will be fixed in a coming
+maintenance release.
+
 ## Running your code
 
 heapprof can be invoked either programmatically or from the command line. Programmatically, you call

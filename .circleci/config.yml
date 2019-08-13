@@ -15,9 +15,6 @@ executors:
       # documented at https://circleci.com/docs/2.0/circleci-images/
       # - image: circleci/mongo:3.4.4
 
-orbs:
-  win: circleci/windows@1.0.0
-
 jobs:
   test:
     executor: humu-ci-docker-image
@@ -86,59 +83,12 @@ jobs:
           path: test-reports
           destination: test-reports
 
-  # Use this to cross-compile a Windows binary and make a wheel. The resulting artifacts from
-  # release candidates go into PIP.
-  buildwin:
-    executor:
-      name: win/vs2019
-      shell: bash.exe
-    steps:
-      - checkout
-      # Install dependencies, with caching.
-      - restore_cache:
-          keys:
-            - win-dependencies-{{ checksum "requirements.txt" }}
-            # fallback to using the latest cache if no exact match is found
-            - win-dependencies-
-      - run:
-          name: install_dependencies
-          command: |
-            python.exe -m venv venv
-            source . venv/bin/activate
-            pip.exe install --upgrade pip setuptools cmake
-      - save_cache:
-          paths:
-            - venv
-          key: win-dependencies-{{ checksum "requirements.txt" }}
-
-      - run:
-          name: run_tests
-          command: |
-            source . venv/bin/activate
-            python.exe setup.py test
-
-      - run:
-          name: build_wheel
-          command: |
-            source . venv/bin/activate
-            python.exe setup.py bdist_wheel
-
-      - store_artifacts:
-          path: dist
-          destination: wheel
-
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
-
-
 workflows:
   version: 2
   test:
     jobs:
       - test
       - lint
-      - buildwin
 
 
 # Only notify slack about build failures/fixes on master!
