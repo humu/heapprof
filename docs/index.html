@@ -69,6 +69,9 @@ internally, and only writes snapshots when its snapshot() function is called; th
 slightly lower overhead, but you have to know the moments at which you’ll want a snapshot before the
 program starts. This makes it particularly useful for finding leaks (from the snapshot at program
 exit), but not as good for understanding events like memory spikes.</p>
+<p><strong>NOTE:</strong> The 1.0.0 release of heapprof does not include compiled Windows binaries. You will need to
+have a compiler and Python build environment installed in order to use this package. This will be
+fixed in an upcoming maintenance release.</p>
 <div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>

@@ -57,23 +57,25 @@ cppmodule = Extension(
 setup(
     # About this project
     name="heapprof",
-    version="1.0.0a1",
+    version="1.0.0",
     description="Logging heap profiler",
     long_description=long_description,
+    long_description_content_type="text/markdown",
     keywords="development profiling memory",
     author="Yonatan Zunger",
     author_email="zunger@humu.com",
     license="MIT",
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: MIT License",
         "Intended Audience :: Developers",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: Implementation :: CPython",
     ],
     project_urls={
-        "Source": "https://github.com/humu-com/heapprof",
-        "Tracker": "https://github.com/humu-com/heapprof/issues",
+        "Documentation": "https://humu.github.io/heapprof",
+        "Source": "https://github.com/humu/heapprof",
+        "Tracker": "https://github.com/humu/heapprof/issues",
     },
     # I suppose I should be glad that distutils has a certain amount of monkey-patching ability
     # built-in?
@@ -83,7 +85,7 @@ setup(
     # version of this run on 3.4 or above if anyone really wants to.
     python_requires=">=3.7",
     ext_modules=[cppmodule],
-    packages=find_packages(exclude=["tests", "tools", "docs"]),
+    packages=find_packages(exclude=["tests", "tools", "docs", "docs_src"]),
     # Testing
     test_suite="nose.collector",
     tests_require=["nose"],

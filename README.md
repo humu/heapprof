@@ -28,6 +28,10 @@ You can install heapprof with `pip install heapprof`. heapprof is released under
 
 You can read all the documentation at [humu.github.io/heapprof](https://humu.github.io/heapprof).
 
+**NOTE:** The 1.0.0 release of heapprof does not include compiled Windows binaries. You will need to
+have a compiler and Python build environment installed in order to use this package. This will be
+fixed in an upcoming maintenance release.
+
 ## Navigating the Repository
 
 If you're trying to find something in the GitHub repository, here's a brief directory (since, like
