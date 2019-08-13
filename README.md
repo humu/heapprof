@@ -1,5 +1,5 @@
 [![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-374/)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v1.4%20adopted-ff69b4.svg)](https://humu.github.io/heapprof/code-of-conduct.html)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v1.4%20adopted-ff69b4.svg)](https://humu.github.io/heapprof/code_of_conduct.html)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://humu.github.io/heapprof/license.html)
 [![CircleCI](https://circleci.com/gh/humu/heapprof/tree/master.svg?style=svg&circle-token=1557bfcabda0155d6505a45e3f00d4a71a005565)](https://circleci.com/gh/humu/heapprof/tree/master)
 
@@ -15,6 +15,8 @@ heapprof is a logging, sampling heap profiler for Python 3.7+.
 
 It comes with a suite of visualization and analysis tools (including time plots, flame graphs, and
 flow graphs), as well as an API for doing your own analyses of the results.
+
+[![screenshot of split time plot](https://humu.github.io/heapprof/_images/split_time_plot.png)](https://humu.github.io/heapprof/visualizing_results.html)
 
 heapprof is complementary to [tracemalloc](https://docs.python.org/3/library/tracemalloc.html),
 which is a snapshotting heap profiler. The difference is that tracemalloc keeps track of live memory
