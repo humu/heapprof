@@ -1,5 +1,5 @@
 [![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-374/)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v1.4%20adopted-ff69b4.svg)](https://humu.github.io/heapprof/code-of-conduct.html)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v1.4%20adopted-ff69b4.svg)](https://humu.github.io/heapprof/code_of_conduct.html)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://humu.github.io/heapprof/license.html)
 [![CircleCI](https://circleci.com/gh/humu/heapprof/tree/master.svg?style=svg&circle-token=1557bfcabda0155d6505a45e3f00d4a71a005565)](https://circleci.com/gh/humu/heapprof/tree/master)
 
