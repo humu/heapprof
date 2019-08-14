@@ -108,7 +108,10 @@ jobs:
       - run:
           name: install_python
           command: |
-            choco install python pip
+            choco install python --version 3.7.4
+            choco install pip --source python
+            choco install setuptools --source python
+            choco install cmake
       # Install dependencies, with caching.
       - restore_cache:
           keys:
