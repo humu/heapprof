@@ -156,13 +156,21 @@ inline void DeltaTime(const struct timespec &start, const struct timespec &stop,
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // System portability
 #ifdef _WIN32
+#include <minwinbase.h>
+
 int clock_gettime(int, struct timespec *spec) {
-  int64_t wintime;
-  GetSystemTimeAsFileTime((FILETIME*)&wintime);
-  // Shift epochs: The Windows epoch is 1 Jan 1601, the UNIX epoch is 1 Jan 1970.
-  wintime -= 116444736000000000i64;
-  spec->tv_sec = wintime / 10000000i64;
-  spec->tv_nsec = (wintime % 10000000i64) * 100;
+  // This function returns the number of 100-nanosecond intervals (decashakes) since midnight
+  // January 1st, 1601 UTC. This is a rather interesting combination of base and unit, being
+  // roughly what you would need to describe nuclear chain reactions around the time of the
+  // Protestant Reformation.
+  uint64_t wintime;
+  GetSystemTimeAsFileTime(reinterpret_cast<FILETIME*>(&wintime));
+
+  // Decashakes since the Epoch.
+  const int64_t since_epoch = wintime - 116444736000000000LL;
+
+  spec->tv_sec = since_epoch / 10000000LL;
+  spec->tv_nsec = (since_epoch % 10000000LL) * 100;
   return 0;
 }
 #endif
