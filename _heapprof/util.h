@@ -153,4 +153,18 @@ inline void DeltaTime(const struct timespec &start, const struct timespec &stop,
   }
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// System portability
+#ifdef _WIN32
+int clock_gettime(int, struct timespec *spec) {
+  int64_t wintime;
+  GetSystemTimeAsFileTime((FILETIME*)&wintime);
+  // Shift epochs: The Windows epoch is 1 Jan 1601, the UNIX epoch is 1 Jan 1970.
+  wintime -= 116444736000000000i64;
+  spec->tv_sec = wintime / 10000000i64;
+  spec->tv_nsec = (wintime % 10000000i64) * 100;
+  return 0;
+}
+#endif
+
 #endif  // _HEAPPROF_UTIL_H__
