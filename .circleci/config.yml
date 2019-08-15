@@ -117,21 +117,20 @@ jobs:
             Python.exe -m pip install --upgrade pip setuptools
       - run:
           name: install_cmake
-          command: choco upgrade cmake -c C:\downloadcache -y
+          command: choco upgrade cmake -c C:\downloadcache -y --installargs 'ADD_CMAKE_TO_PATH=System'
       - save_cache:
           paths:
             - C:\downloadcache
           key: win-python-3.7.4
       - run:
-          name: refresh
-          command: refreshenv
-      - run:
           name: run_tests
           command: |
+            refreshenv
             Python.exe setup.py test
       - run:
           name: build_wheel
           command: |
+            refreshenv
             Python.exe setup.py bdist_wheel
       - store_artifacts:
           path: dist
