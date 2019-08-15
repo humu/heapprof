@@ -109,7 +109,7 @@ jobs:
             - win-python-3.7.4
       - run:
           name: install_python
-          command: choco upgrade python --version 3.7.4
+          command: choco upgrade python --version 3.7.4 -c C:\downloadcache -y
       - run:
           name: upgrade_python
           command: |
@@ -117,15 +117,14 @@ jobs:
             Python.exe -m pip install --upgrade pip setuptools
       - run:
           name: install_cmake
-          command: choco upgrade cmake
+          command: choco upgrade cmake -c C:\downloadcache -y
+      - save_cache:
+          paths:
+            - C:\downloadcache
+          key: win-python-3.7.4
       - run:
           name: refresh
           command: refreshenv
-      - save_cache:
-          paths:
-            - C:\Python37
-            - C:\Program Files\CMake
-          key: win-python-3.7.4
       - run:
           name: run_tests
           command: |
@@ -134,11 +133,9 @@ jobs:
           name: build_wheel
           command: |
             Python.exe setup.py bdist_wheel
-
       - store_artifacts:
           path: dist
           destination: wheel
-
       - store_artifacts:
           path: test-reports
           destination: test-reports

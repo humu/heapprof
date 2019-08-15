@@ -1,13 +1,16 @@
 import os
+import sys
 from distutils.command.build_ext import build_ext as _build_ext  # type: ignore
 
 from setuptools import Extension, find_packages, setup
 
 with open(
-    os.path.join(os.path.abspath(os.path.dirname(__file__)), "README.md"),
-    encoding="utf-8",
+    os.path.join(os.path.abspath(os.path.dirname(__file__)), "README.md"), encoding="utf-8"
 ) as f:
     long_description = f.read()
+
+
+CMAKE = 'CMake' if sys.platform in ('win32', 'cygwin') else 'cmake'
 
 
 # Our C++ library depends on ABSL. This insane monkey-patch is the simplest way I can figure out to
@@ -16,19 +19,12 @@ class BuildExtWithABSL(_build_ext):
     def run(self) -> None:
         if not os.path.exists("build/absl"):
             self.mkpath("build/absl")
-            self.spawn(
-                [
-                    "git",
-                    "clone",
-                    "https://github.com/abseil/abseil-cpp.git",
-                    "build/absl",
-                ]
-            )
+            self.spawn(["git", "clone", "https://github.com/abseil/abseil-cpp.git", "build/absl"])
 
         pwd = os.getcwd()
         os.chdir("build/absl")
-        self.spawn(["cmake", "."])
-        self.spawn(["cmake", "--build", ".", "--target", "base"])
+        self.spawn([CMAKE, "."])
+        self.spawn([CMAKE, "--build", ".", "--target", "base"])
         os.chdir(pwd)
 
         super().run()
