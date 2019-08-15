@@ -3,8 +3,50 @@
 
 // System portability library, with various things so this can compile on a range of machines.
 
+// All Windows platforms need this soonest.
+#ifdef _WIN64
+#include <windows.h>
+#elif _WIN32
+// TODO, maybe support this someday? It would require a lot more care with integer sizes in various
+// places, but 32-bit machines are a dying breed.
+#error heapprof does not currently support WIN32 builds.
+#endif
+
+////////////////////////////////////////////////////////////////////////////////////////////
+// Time-related definitions
+
 // Include this on all machines, but append things to it in some cases.
 #include <time.h>
+
+// Define clock_gettime etc for Windows boxen.
+#ifdef _WIN64
+
+inline void gettime(struct timespec *spec) {
+  // This function returns the number of 100-nanosecond intervals (decashakes) since midnight
+  // January 1st, 1601 UTC. This is a rather interesting combination of base and unit, being
+  // roughly what you would need to describe nuclear chain reactions around the time of the
+  // Protestant Reformation.
+  uint64_t wintime;
+  GetSystemTimeAsFileTime(reinterpret_cast<FILETIME*>(&wintime));
+
+  // Convert to decashakes since the UNIX Epoch.
+  const int64_t since_epoch = wintime - 116444736000000000LL;
+
+  spec->tv_sec = since_epoch / 10000000LL;
+  spec->tv_nsec = (since_epoch % 10000000LL) * 100;
+}
+
+#else
+
+// POSIX systems just have a function for this.
+inline void gettime(struct timespec *spec) {
+  clock_gettime(CLOCK_REALTIME, spec);
+}
+
+#endif
+
+////////////////////////////////////////////////////////////////////////////////////////////
+// Bitwise operations, bytesex, and CPU branching.
 
 // A note here: We need to achieve some portable operations which aren't yet
 // available in the C++ standard, but the portable logic for them is
@@ -33,30 +75,10 @@ inline int Log2RoundUp(uint64_t x) {
   return x ? 64 - absl::base_internal::CountLeadingZeros64(x - 1) : 0;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////
+// File system access
+
 #ifdef _WIN64
-#include <windows.h>
-
-#ifndef CLOCK_REALTIME
-#define CLOCK_REALTIME 0
-#endif
-
-// On other systems, this function is part of time.h.
-inline int clock_gettime(int, struct timespec *spec) {
-  // This function returns the number of 100-nanosecond intervals (decashakes) since midnight
-  // January 1st, 1601 UTC. This is a rather interesting combination of base and unit, being
-  // roughly what you would need to describe nuclear chain reactions around the time of the
-  // Protestant Reformation.
-  uint64_t wintime;
-  GetSystemTimeAsFileTime(reinterpret_cast<FILETIME*>(&wintime));
-
-  // Decashakes since the Epoch.
-  const int64_t since_epoch = wintime - 116444736000000000LL;
-
-  spec->tv_sec = since_epoch / 10000000LL;
-  spec->tv_nsec = (since_epoch % 10000000LL) * 100;
-  return 0;
-}
-
 // Seriously, Microsoft? You don't have pwrite? Normal people implement write *on top of* pwrite.
 inline ssize_t pwrite(int fd, const void *buf, size_t nbytes, off_t offset) {
   const off_t pos = lseek(fd, 0, SEEK_CUR);
@@ -65,10 +87,9 @@ inline ssize_t pwrite(int fd, const void *buf, size_t nbytes, off_t offset) {
   lseek(fd, pos, SEEK_SET);
   return written;
 }
-
 #else
-
 // Defines write() etc on Unices.
 #include <unistd.h>
+#endif  // Switch over platforms
 
 #endif  // _HEAPPROF_PORT_H__

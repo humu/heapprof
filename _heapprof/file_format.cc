@@ -453,7 +453,7 @@ bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
   struct timespec start_time;
   off_t total_bytes;
   if (verbose) {
-    clock_gettime(CLOCK_REALTIME, &start_time);
+    gettime(&start_time);
     total_bytes = lseek(hpd, 0, SEEK_END);
     lseek(hpd, 0, SEEK_SET);
     fprintf(stderr, "Digesting %s: ", filebase);
@@ -498,7 +498,7 @@ bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
 
     if (verbose && !(events_read % 500000)) {
       struct timespec now;
-      clock_gettime(CLOCK_REALTIME, &now);
+      gettime(&now);
       struct timespec delta;
       DeltaTime(start_time, now, &delta);
       const double time_used = delta.tv_sec + 1e-9 * delta.tv_nsec;

@@ -4,6 +4,7 @@
 #include <string>
 #include "Python.h"
 #include "_heapprof/file_format.h"
+#include "_heapprof/port.h"
 #include "_heapprof/simple_hash.h"
 #include "_heapprof/util.h"
 #include "frameobject.h"
@@ -20,7 +21,7 @@ Profiler::Profiler(const char *filebase, Sampler *sampler)
   }
 
   // Initialize our clock and write initial metadata.
-  clock_gettime(CLOCK_REALTIME, &last_clock_);
+  gettime(&last_clock_);
   WriteMetadata(metadata_file_, last_clock_, *sampler_);
   ok_ = true;
 }
@@ -33,7 +34,7 @@ void Profiler::HandleMalloc(void *ptr, size_t size) {
     return;
   }
   struct timespec timestamp;
-  clock_gettime(CLOCK_REALTIME, &timestamp);
+  gettime(&timestamp);
   const uint32_t traceindex = GetTraceIndex();
   live_set_[ptr] = {traceindex, size};
   WriteEvent(data_file_, &last_clock_, timestamp, traceindex, size, true);
@@ -47,7 +48,7 @@ void Profiler::HandleFree(void *ptr) {
     return;
   }
   struct timespec timestamp;
-  clock_gettime(CLOCK_REALTIME, &timestamp);
+  gettime(&timestamp);
   WriteEvent(data_file_, &last_clock_, timestamp, live_ptr->second.traceindex,
              live_ptr->second.size, false);
   live_set_.erase(live_ptr);
