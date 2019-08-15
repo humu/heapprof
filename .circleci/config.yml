@@ -102,7 +102,6 @@ jobs:
   buildwin:
     executor:
       name: win/vs2019
-      shell: bash.exe
     steps:
       - checkout
       - restore_cache:
@@ -110,7 +109,7 @@ jobs:
             - win-python-3.7.4
       - run:
           name: install_python
-          command: choco install python --version 3.7.4
+          command: choco upgrade python --version 3.7.4
       - run:
           name: upgrade_python
           command: |
@@ -118,7 +117,7 @@ jobs:
             Python.exe -m pip install --upgrade pip setuptools
       - run:
           name: install_cmake
-          command: choco install cmake
+          command: choco upgrade cmake
       - run:
           name: refresh
           command: refreshenv
