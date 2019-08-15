@@ -21,6 +21,18 @@ def hexdump(filename: str) -> None:
                 if pos % 8 == 0:
                     sys.stderr.write(' ')
                 sys.stderr.write(f' {char:02x}')
+
+            for pos in range(len(data), 16):
+                sys.stderr.write('   ')
+                if pos % 8 == 0:
+                    sys.stderr.write(' ')
+
+            sys.stderr.write('   ')
+            for char in data:
+                if char >= 0x20 and char < 0x7f:
+                    sys.stderr.write(chr(char))
+                else:
+                    sys.stderr.write('.')
             sys.stderr.write('\n')
             offset += len(data)
 
@@ -52,7 +64,7 @@ class EndToEndTest(unittest.TestCase):
             hexdump(hpxFile + '.hpm')
 
             # Make a digest with 10-millisecond intervals and no rounding.
-            reader.makeDigest(timeInterval=0.01, precision=0)
+            reader.makeDigest(timeInterval=0.01, precision=0, verbose=True)
 
             self.assertGreaterEqual(reader.elapsedTime(), 0.05)
             self.assertAlmostEqual(reader.snapshotInterval(), 0.01)
