@@ -155,10 +155,11 @@ inline void DeltaTime(const struct timespec &start, const struct timespec &stop,
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // System portability
-#ifdef _WIN32
-#include <minwinbase.h>
+#ifdef _WIN64
+#include <windows.h>
 
-int clock_gettime(int, struct timespec *spec) {
+// On other systems, this function is part of time.h.
+inline int clock_gettime(int, struct timespec *spec) {
   // This function returns the number of 100-nanosecond intervals (decashakes) since midnight
   // January 1st, 1601 UTC. This is a rather interesting combination of base and unit, being
   // roughly what you would need to describe nuclear chain reactions around the time of the
