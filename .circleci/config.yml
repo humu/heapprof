@@ -112,33 +112,14 @@ jobs:
             choco install pip --source python
             choco install setuptools --source python
             choco install cmake
-      # Install dependencies, with caching.
-      - restore_cache:
-          keys:
-            - win-dependencies-{{ checksum "requirements.txt" }}
-            # fallback to using the latest cache if no exact match is found
-            - win-dependencies-
-      - run:
-          name: install_dependencies
-          command: |
-            python -m venv venv
-            source . venv/bin/activate
-            pip install --upgrade pip setuptools cmake
-      - save_cache:
-          paths:
-            - venv
-          key: win-dependencies-{{ checksum "requirements.txt" }}
-
       - run:
           name: run_tests
           command: |
-            source . venv/bin/activate
-            python setup.py test
+            python.exe setup.py test
       - run:
           name: build_wheel
           command: |
-            source . venv/bin/activate
-            python setup.py bdist_wheel
+            python.exe setup.py bdist_wheel
 
       - store_artifacts:
           path: dist
