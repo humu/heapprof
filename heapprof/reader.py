@@ -1,3 +1,4 @@
+import logging
 import math
 from collections import defaultdict
 from typing import (Dict, List, NamedTuple, Optional, Sequence, TextIO, Tuple,
@@ -397,4 +398,5 @@ class Reader(object):
             self._hpc = self._hpc or HPC(self.filebase, self._hpm)
         except (FileNotFoundError, ValueError):
             # These mean that either the file is absent or corrupt.
+            logging.exception(f'Failed to open HPC from {self.filebase}')
             pass
