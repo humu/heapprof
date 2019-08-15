@@ -158,6 +158,10 @@ inline void DeltaTime(const struct timespec &start, const struct timespec &stop,
 #ifdef _WIN64
 #include <windows.h>
 
+#ifndef CLOCK_REALTIME
+#define CLOCK_REALTIME 0
+#endif
+
 // On other systems, this function is part of time.h.
 inline int clock_gettime(int, struct timespec *spec) {
   // This function returns the number of 100-nanosecond intervals (decashakes) since midnight
@@ -174,6 +178,16 @@ inline int clock_gettime(int, struct timespec *spec) {
   spec->tv_nsec = (since_epoch % 10000000LL) * 100;
   return 0;
 }
+
+// Seriously, Microsoft? You don't have pwrite? Normal people implement write *on top of* pwrite.
+inline ssize_t pwrite(int fd, const void *buf, size_t nbytes, off_t offset) {
+  const off_t pos = lseek(fd, 0, SEEK_CUR);
+  lseek(fd, offset, SEEK_SET);
+  const ssize_t written = write(fd, buf, nbytes);
+  lseek(fd, pos, SEEK_SET);
+  return written;
+}
+
 #endif
 
 #endif  // _HEAPPROF_UTIL_H__
