@@ -1,5 +1,4 @@
 #include "_heapprof/util.h"
-#include <unistd.h>
 #include <string>
 
 #define VARINT_BUFFER_SIZE MAX_UNSIGNED_VARINT_SIZE(uint64_t)
