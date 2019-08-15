@@ -1,5 +1,4 @@
 #include "_heapprof/profiler.h"
-#include <arpa/inet.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <string>
