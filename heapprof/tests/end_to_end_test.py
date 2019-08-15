@@ -8,7 +8,7 @@ import heapprof
 
 
 def hexdump(filename: str) -> None:
-    print(filename)
+    sys.stderr.write(f'File {filename}\n')
     offset = 0
     with open(filename, 'rb') as input:
         data = input.read(16)
@@ -18,6 +18,7 @@ def hexdump(filename: str) -> None:
                 sys.stderr.write(' ')
             sys.stderr.write(f' {char:02x}')
         sys.stderr.write('\n')
+        offset += len(data)
 
 
 class EndToEndTest(unittest.TestCase):
