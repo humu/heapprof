@@ -12,12 +12,12 @@ def hexdump(filename: str) -> None:
     offset = 0
     with open(filename, 'rb') as input:
         data = input.read(16)
-        sys.stdout.write(f'{offset:04x}')
+        sys.stderr.write(f'{offset:04x}')
         for pos, char in enumerate(data):
             if pos % 8 == 0:
-                sys.stdout.write(' ')
-            sys.stdout.write(f' {char:02x}')
-        sys.stdout.write('\n')
+                sys.stderr.write(' ')
+            sys.stderr.write(f' {char:02x}')
+        sys.stderr.write('\n')
 
 
 class EndToEndTest(unittest.TestCase):
