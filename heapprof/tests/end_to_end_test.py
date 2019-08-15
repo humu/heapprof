@@ -11,14 +11,18 @@ def hexdump(filename: str) -> None:
     sys.stderr.write(f'File {filename}\n')
     offset = 0
     with open(filename, 'rb') as input:
-        data = input.read(16)
-        sys.stderr.write(f'{offset:04x}')
-        for pos, char in enumerate(data):
-            if pos % 8 == 0:
-                sys.stderr.write(' ')
-            sys.stderr.write(f' {char:02x}')
-        sys.stderr.write('\n')
-        offset += len(data)
+        while True:
+            data = input.read(16)
+            if not data:
+                break
+
+            sys.stderr.write(f'{offset:04x}')
+            for pos, char in enumerate(data):
+                if pos % 8 == 0:
+                    sys.stderr.write(' ')
+                sys.stderr.write(f' {char:02x}')
+            sys.stderr.write('\n')
+            offset += len(data)
 
 
 class EndToEndTest(unittest.TestCase):
