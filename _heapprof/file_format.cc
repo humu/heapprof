@@ -592,6 +592,9 @@ PyObject *ReadDigestMetadata(int fd) {
     return nullptr;
   }
 
+  fprintf(stderr, "Initial read: index offset %08x isec %llu insec %llu int %llu\n",
+      index_offset, initial_secs, initial_nsec, interval_msec);
+
   if (lseek(fd, index_offset, SEEK_SET) != static_cast<off_t>(index_offset)) {
     PyErr_Format(PyExc_ValueError, "Invalid index offset %llu in metadata",
                  index_offset);
