@@ -6,6 +6,26 @@
 #include "_heapprof/scoped_object.h"
 #include "_heapprof/util.h"
 
+#ifdef _WIN32
+#include <io.h>
+#include <tchar.h>
+#include <stdio.h>
+
+static void ShowFileInfo(int fd, const char *filetype) {
+  HANDLE hFile = reinterpret_cast<HANDLE>(_get_osfhandle(fd));
+  if (hFile == INVALID_HANDLE_VALUE) {
+    fprintf(stderr, "Failed to get handle for %s from FD %d\n", filetype, fd);
+  } else {
+    TCHAR fName[MAX_PATH];
+    GetFinalPathNameByHandle(hFile, fName, MAX_PATH, VOLUME_NAME_NT);
+
+    fprintf(stderr, "Reading %s from FD %d: %s\n", filetype, fd, fName);
+  }
+}
+#else
+static void ShowFileInfo(int fd, const char *filetype) {}
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 // .hpm files
 
@@ -37,6 +57,7 @@ struct RawMetadata {
 // Read the metadata from a .hpm file in C++ form; return false and set the
 // exception on failure.
 static bool ReadRawMetadata(int fd, RawMetadata *md) {
+  ShowFileInfo(fd, "raw metadata");
   if (!ReadFixed32FromFile(fd, &md->version)) {
     PyErr_SetString(PyExc_EOFError, "Couldn't read version");
     return false;
@@ -73,6 +94,7 @@ static bool ReadRawMetadata(int fd, RawMetadata *md) {
 }
 
 PyObject *ReadMetadata(int fd) {
+  ShowFileInfo(fd, "HPM");
   RawMetadata md;
   if (!ReadRawMetadata(fd, &md)) {
     return nullptr;
@@ -130,6 +152,7 @@ bool WriteRawTrace(int fd) {
 }
 
 PyObject *ReadRawTrace(int fd) {
+  ShowFileInfo(fd, "raw trace");
   ScopedObject list(PyList_New(0));
   if (!list) {
     PyErr_SetString(PyExc_RuntimeError, "Failed to allocate an empty list");
@@ -549,25 +572,8 @@ bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
   return !PyErr_Occurred();
 }
 
-#ifdef _WIN32
-#include <io.h>
-#include <tchar.h>
-#include <stdio.h>
-#endif
-
 PyObject *ReadDigestMetadata(int fd) {
-
-#ifdef _WIN32
-  HANDLE hFile = reinterpret_cast<HANDLE>(_get_osfhandle(fd));
-  if (hFile == INVALID_HANDLE_VALUE) {
-    fprintf(stderr, "Failed to get handle from FD %d\n", fd);
-  } else {
-    TCHAR fName[MAX_PATH];
-    GetFinalPathNameByHandle(hFile, fName, MAX_PATH, VOLUME_NAME_NT);
-
-    fprintf(stderr, "Reading digest metadata from FD %d: %s\n", fd, fName);
-  }
-#endif
+  ShowFileInfo(fd, "HPC metadata");
 
   uint32_t version = 0;
   if (!ReadFixed32FromFile(fd, &version) || version != 1) {
@@ -620,6 +626,7 @@ PyObject *ReadDigestMetadata(int fd) {
 }
 
 PyObject *ReadDigestEntry(int fd, Py_ssize_t offset) {
+  ShowFileInfo(fd, "HPC entry");
   if (lseek(fd, offset, SEEK_SET) != offset) {
     PyErr_Format(PyExc_ValueError, "Invalid entry offset %d", offset);
     return nullptr;
