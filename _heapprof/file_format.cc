@@ -549,7 +549,26 @@ bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
   return !PyErr_Occurred();
 }
 
+#ifdef _WIN32
+#include <io.h>
+#include <tchar.h>
+#include <stdio.h>
+#endif
+
 PyObject *ReadDigestMetadata(int fd) {
+
+#ifdef _WIN32
+  HANDLE hFile = reinterpret_cast<HANDLE>(_get_osfhandle(fd));
+  if (hFile == INVALID_HANDLE_VALUE) {
+    fprintf(stderr, "Failed to get handle from FD %d\n", fd);
+  } else {
+    TCHAR fName[MAX_PATH];
+    GetFinalPathNameByHandle(hFile, fName, MAX_PATH, VOLUME_NAME_NT);
+
+    fprintf(stderr, "Reading digest metadata from FD %d: %s\n", fd, fName);
+  }
+#endif
+
   uint32_t version = 0;
   if (!ReadFixed32FromFile(fd, &version) || version != 1) {
     PyErr_Format(PyExc_ValueError, "Unrecognized file version %d", version);
