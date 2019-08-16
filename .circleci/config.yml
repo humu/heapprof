@@ -49,6 +49,17 @@ jobs:
           path: test-reports
           destination: test-reports
 
+      - run:
+          name: build_wheel
+          command: |
+            . venv/bin/activate
+            python setup.py bdist_wheel
+
+      - store_artifacts:
+          path: dist
+          destination: wheel
+
+
   lint:
     executor: humu-ci-docker-image
     working_directory: ~/repo
