@@ -81,9 +81,13 @@ inline int Log2RoundUp(uint64_t x) {
 #ifdef _WIN64
 // Seriously, Microsoft? You don't have pwrite? Normal people implement write *on top of* pwrite.
 inline ssize_t pwrite(int fd, const void *buf, size_t nbytes, off_t offset) {
+  fprintf(stderr, "pwrite %lld bytes at %lld\n", nbytes, offset);
   const off_t pos = lseek(fd, 0, SEEK_CUR);
-  lseek(fd, offset, SEEK_SET);
+  fprintf(stderr, "offset was %lld\n", pos);
+  const off_t writepos = lseek(fd, offset, SEEK_SET);
+  fprintf(stderr, "new offset is %lld\n", writepos);
   const ssize_t written = write(fd, buf, nbytes);
+  fprintf(stderr, "wrote %lld bytes\n", written);
   lseek(fd, pos, SEEK_SET);
   return written;
 }

@@ -61,10 +61,10 @@ class EndToEndTest(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 reader.elapsedTime()
 
-            hexdump(hpxFile + '.hpm')
-
             # Make a digest with 10-millisecond intervals and no rounding.
             reader.makeDigest(timeInterval=0.01, precision=0, verbose=True)
+
+            hexdump(hpxFile + '.hpc')
 
             self.assertGreaterEqual(reader.elapsedTime(), 0.05)
             self.assertAlmostEqual(reader.snapshotInterval(), 0.01)
