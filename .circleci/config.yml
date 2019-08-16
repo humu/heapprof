@@ -33,7 +33,7 @@ jobs:
           command: |
             python -m venv venv
             . venv/bin/activate
-            pip install --upgrade pip setuptools cmake
+            pip install --upgrade pip setuptools cmake wheel
       - save_cache:
           paths:
             - ./venv
