@@ -557,6 +557,7 @@ bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
   }
   uint64_t index_offset = static_cast<uint64_t>(lseek(hpc, 0, SEEK_CUR));
   index_offset = absl::ghtonll(index_offset);
+  fprintf(stderr, "Writing index offset of %x\n", index_offset);
   pwrite(hpc, &index_offset, sizeof(index_offset), index_offset_location);
 
   WriteFixed32ToFile(hpc, kIndexMagic);
