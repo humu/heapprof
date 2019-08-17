@@ -555,11 +555,11 @@ bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
   if (verbose) {
     fprintf(stderr, "Writing index with %zd entries\n", snapshot_starts.size());
   }
-  uint64_t index_offset = static_cast<uint64_t>(lseek(hpc, 0, SEEK_CUR));
+  const uint64_t index_offset = static_cast<uint64_t>(lseek(hpc, 0, SEEK_CUR));
   fprintf(stderr, "lseek finds %x\n", index_offset);
-  index_offset = absl::ghtonll(index_offset);
-  fprintf(stderr, "Writing index offset of %x\n", index_offset);
-  pwrite(hpc, &index_offset, sizeof(index_offset), index_offset_location);
+  const uint64_t n_index_offset = absl::ghtonll(index_offset);
+  fprintf(stderr, "Writing index offset of %x\n", n_index_offset);
+  pwrite(hpc, &n_index_offset, sizeof(n_index_offset), index_offset_location);
 
   WriteFixed32ToFile(hpc, kIndexMagic);
   WriteVarintToFile(hpc, snapshot_starts.size());
