@@ -555,11 +555,29 @@ bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
   if (verbose) {
     fprintf(stderr, "Writing index with %zd entries\n", snapshot_starts.size());
   }
-  const uint64_t index_offset = static_cast<uint64_t>(lseek(hpc, 0, SEEK_CUR));
+#ifdef __clang__
+  fprintf(stderr, "clang defined\n");
+#endif
+#ifdef __GNUC__
+  fprintf(stderr, "gnuc %d\n", __GNUC__);
+#endif
+#ifdef _MSC_VER
+  fprintf(stderr, "msc_ver %d\n", _MSC_VER);
+#endif
+#ifdef __GLIBC__
+  fprintf(stderr, "glibc\n");
+#endif
+#ifdef ABSL_IS_LITTLE_ENDIAN
+  fprintf(stderr, "little\n");
+#endif
+#ifdef ABSL_IS_BIG_ENDIAN
+  fprintf(stderr, "big\n");
+#endif
+  uint64_t index_offset = static_cast<uint64_t>(lseek(hpc, 0, SEEK_CUR));
   fprintf(stderr, "lseek finds %x\n", index_offset);
-  const uint64_t n_index_offset = absl::ghtonll(index_offset);
-  fprintf(stderr, "Writing index offset of %x\n", n_index_offset);
-  pwrite(hpc, &n_index_offset, sizeof(n_index_offset), index_offset_location);
+  index_offset = absl::ghtonll(index_offset);
+  fprintf(stderr, "Writing index offset of %x\n", index_offset);
+  pwrite(hpc, &index_offset, sizeof(index_offset), index_offset_location);
 
   WriteFixed32ToFile(hpc, kIndexMagic);
   WriteVarintToFile(hpc, snapshot_starts.size());
