@@ -77,9 +77,6 @@ timestamp where you stopped it. You can always replace the digest by calling
 </div></blockquote>
 <div class="section" id="installation-and-system-requirements">
 <h2>Installation and system requirements<a class="headerlink" href="#installation-and-system-requirements" title="Permalink to this headline">¶</a></h2>
-<p>heapprof is designed to work with Python 3.7 or greater, using the CPython runtime. If you are using
-an older version of Python or a less-common runtime, this package won’t work, and you’ll get strange
-errors if you try.</p>
 <p>To install heapprof, simply run <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">heapprof</span></code>. Some of heapprof’s data visualization
 features require additional packages as well:</p>
 <ul class="simple">
@@ -94,9 +91,15 @@ application (and just send your flame data there), or you can install and run it
 <code class="docutils literal notranslate"><span class="pre">npm</span> <span class="pre">install</span> <span class="pre">-g</span> <span class="pre">speedscope</span></code>. (See its <a class="reference external" href="https://github.com/jlfwong/speedscope">GitHub site</a> for
 more installation details if you aren’t familiar with running local JavaScript code)</p></li>
 </ul>
-<p>The 1.0.0 release of heapprof does not contain precompiled Windows images; in order to use this on a
-Windows machine, you will need a C/C++ compilation environment. This will be fixed in a coming
-maintenance release.</p>
+<div class="section" id="system-requirements">
+<h3>System Requirements<a class="headerlink" href="#system-requirements" title="Permalink to this headline">¶</a></h3>
+<p>heapprof is designed to work with Python 3.7 or greater, using the CPython runtime. If you are using
+an older version of Python or a less-common runtime, this package won’t work, and you’ll get strange
+errors if you try.</p>
+<p>The current heapprof release includes binaries for Linux x86_64, OS X, and 64-bit Windows. On
+other platforms, you can try compiling from a source distribution; if you have to make portability
+changes (which you almost certainly will), those would be good to commit back to the main branch.</p>
+</div>
 </div>
 <div class="section" id="running-your-code">
 <h2>Running your code<a class="headerlink" href="#running-your-code" title="Permalink to this headline">¶</a></h2>
@@ -147,7 +150,10 @@ results</span></a>.</p>
   <h3><a href="index.html">Table of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Using heapprof</a><ul>
-<li><a class="reference internal" href="#installation-and-system-requirements">Installation and system requirements</a></li>
+<li><a class="reference internal" href="#installation-and-system-requirements">Installation and system requirements</a><ul>
+<li><a class="reference internal" href="#system-requirements">System Requirements</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#running-your-code">Running your code</a></li>
 <li><a class="reference internal" href="#making-a-digest">Making a digest</a></li>
 </ul>
