@@ -91,9 +91,18 @@ inline ssize_t pwrite(int fd, const void *buf, size_t nbytes, off_t offset) {
   lseek(fd, pos, SEEK_SET);
   return written;
 }
-#else
+
+#define WRITE_MODE _O_WRONLY | _O_CREAT | _O_TRUNC | _O_BINARY
+#define READ_MODE _O_RDONLY | _O_BINARY
+
+#else  // Non-Windows machines
+
 // Defines write() etc on Unices.
 #include <unistd.h>
+
+#define WRITE_MODE O_WRONLY | O_CREAT | O_TRUNC
+#define READ_MODE O_RDONLY
+
 #endif  // Switch over platforms
 
 #endif  // _HEAPPROF_PORT_H__

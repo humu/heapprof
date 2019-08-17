@@ -12,7 +12,7 @@ void WriteVarintToFile(int fd, uint64_t value) {
     fprintf(stderr, "%02x", *p);
   }
   fprintf(stderr, " ptr %p size %d\n", g_varint_buffer, end - g_varint_buffer);
-  write(fd, g_varint_buffer, end - g_varint_buffer);
+  fprintf(stderr, "Byteds written: %d\n", write(fd, g_varint_buffer, end - g_varint_buffer));
 }
 
 void WriteFixed32ToFile(int fd, uint32_t value) {
@@ -112,7 +112,7 @@ PyObject *ReadStringFromFile(int fd) {
 }
 
 static inline int ScopedFileMode(bool write) {
-  return write ? O_WRONLY | O_CREAT | O_TRUNC : O_RDONLY;
+  return write ? WRITE_MODE : READ_MODE;
 }
 
 ScopedFile::ScopedFile(const char *filebase, const char *suffix, bool write)
