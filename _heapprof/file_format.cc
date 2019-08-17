@@ -6,26 +6,6 @@
 #include "_heapprof/scoped_object.h"
 #include "_heapprof/util.h"
 
-#ifdef _WIN32
-#include <io.h>
-#include <tchar.h>
-#include <stdio.h>
-
-static void ShowFileInfo(int fd, const char *filetype) {
-  HANDLE hFile = reinterpret_cast<HANDLE>(_get_osfhandle(fd));
-  if (hFile == INVALID_HANDLE_VALUE) {
-    fprintf(stderr, "Failed to get handle for %s from FD %d\n", filetype, fd);
-  } else {
-    TCHAR fName[MAX_PATH];
-    GetFinalPathNameByHandle(hFile, fName, MAX_PATH, VOLUME_NAME_NT);
-
-    fprintf(stderr, "Reading %s from FD %d: %s\n", filetype, fd, fName);
-  }
-}
-#else
-static void ShowFileInfo(int fd, const char *filetype) {}
-#endif
-
 ////////////////////////////////////////////////////////////////////////////////
 // .hpm files
 
@@ -57,7 +37,6 @@ struct RawMetadata {
 // Read the metadata from a .hpm file in C++ form; return false and set the
 // exception on failure.
 static bool ReadRawMetadata(int fd, RawMetadata *md) {
-  ShowFileInfo(fd, "raw metadata");
   if (!ReadFixed32FromFile(fd, &md->version)) {
     PyErr_SetString(PyExc_EOFError, "Couldn't read version");
     return false;
@@ -94,7 +73,6 @@ static bool ReadRawMetadata(int fd, RawMetadata *md) {
 }
 
 PyObject *ReadMetadata(int fd) {
-  ShowFileInfo(fd, "HPM");
   RawMetadata md;
   if (!ReadRawMetadata(fd, &md)) {
     return nullptr;
@@ -152,7 +130,6 @@ bool WriteRawTrace(int fd) {
 }
 
 PyObject *ReadRawTrace(int fd) {
-  ShowFileInfo(fd, "raw trace");
   ScopedObject list(PyList_New(0));
   if (!list) {
     PyErr_SetString(PyExc_RuntimeError, "Failed to allocate an empty list");
@@ -457,13 +434,9 @@ bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
   WriteFixed64ToFile(hpc, seconds);
   const uint64_t nsec = static_cast<uint64_t>(1e9 * (hpm.initial_time - seconds));
   WriteFixed64ToFile(hpc, nsec);
-  fprintf(stderr, "After 64's offset is %llx\n", static_cast<uint64_t>(lseek(hpc, 0, SEEK_CUR)));
   WriteVarintToFile(hpc, interval_msec);
-  fprintf(stderr, "After varint offset is %llx\n", static_cast<uint64_t>(lseek(hpc, 0, SEEK_CUR)));
   // This is where we're going to come back later and write the index location.
   const off_t index_offset_location = lseek(hpc, 0, SEEK_CUR);
-  fprintf(stderr, "Wrote to disk: initial seconds %llx nsec %llx interval %x offset %llx\n",
-      seconds, nsec, interval_msec, static_cast<uint64_t>(index_offset_location));
 
   WriteFixed64ToFile(hpc, 0);
 
@@ -578,8 +551,6 @@ bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
 }
 
 PyObject *ReadDigestMetadata(int fd) {
-  ShowFileInfo(fd, "HPC metadata");
-
   uint32_t version = 0;
   if (!ReadFixed32FromFile(fd, &version) || version != 1) {
     PyErr_Format(PyExc_ValueError, "Unrecognized file version %d", version);
@@ -596,9 +567,6 @@ PyObject *ReadDigestMetadata(int fd) {
       !ReadFixed64FromFile(fd, &index_offset)) {
     return nullptr;
   }
-
-  fprintf(stderr, "Initial read: index offset %08llx isec %llu insec %llu int %llu\n",
-      index_offset, initial_secs, initial_nsec, interval_msec);
 
   if (lseek(fd, index_offset, SEEK_SET) != static_cast<off_t>(index_offset)) {
     PyErr_Format(PyExc_ValueError, "Invalid index offset %llx in metadata",
@@ -630,12 +598,10 @@ PyObject *ReadDigestMetadata(int fd) {
 
   const float initial_time = initial_secs + 1e-9 * initial_nsec;
   const float interval_time = 1e-3 * interval_msec;
-  fprintf(stderr, "Successfully read HPC header; it %f int %f\n", initial_time, interval_time);
   return Py_BuildValue("ffO", initial_time, interval_time, offsets.release());
 }
 
 PyObject *ReadDigestEntry(int fd, Py_ssize_t offset) {
-  ShowFileInfo(fd, "HPC entry");
   if (lseek(fd, offset, SEEK_SET) != offset) {
     PyErr_Format(PyExc_ValueError, "Invalid entry offset %d", offset);
     return nullptr;

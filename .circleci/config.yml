@@ -114,7 +114,7 @@ jobs:
           name: upgrade_python
           command: |
             refreshenv
-            Python.exe -m pip install --upgrade pip setuptools
+            Python.exe -m pip install --upgrade pip setuptools wheel
       - run:
           name: install_cmake
           command: choco upgrade cmake -c C:\downloadcache -y --installargs 'ADD_CMAKE_TO_PATH=System'

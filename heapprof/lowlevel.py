@@ -1,5 +1,4 @@
 import linecache
-import logging
 from typing import (Any, Dict, Iterable, Iterator, List, NamedTuple, Optional,
                     Sequence)
 
@@ -180,9 +179,7 @@ class HPC(Sequence[Snapshot]):
 
     def __init__(self, filebase: str, hpm: Optional[HPM] = None) -> None:
         self.hpm = hpm or HPM(filebase)
-        logging.error(f'Opened {filebase}.hpm as fd {self.hpm._mdfile.fileno()}')
         self._file = open(filebase + ".hpc", "rb")
-        logging.error(f'Opened {filebase}.hpc as fd {self._file.fileno()}')
         self.initialTime, self.timeInterval, self.offsets = _heapprof.readDigestMetadata(
             self._file.fileno()
         )
