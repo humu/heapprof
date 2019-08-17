@@ -7,12 +7,7 @@ static uint8_t g_varint_buffer[VARINT_BUFFER_SIZE];
 
 void WriteVarintToFile(int fd, uint64_t value) {
   const uint8_t *end = UnsafeAppendVarint(g_varint_buffer, value);
-  fprintf(stderr, "Write varint %llx: ", value);
-  for (uint8_t *p = g_varint_buffer; p < end; ++p) {
-    fprintf(stderr, "%02x", *p);
-  }
-  fprintf(stderr, " ptr %p size %d\n", g_varint_buffer, end - g_varint_buffer);
-  fprintf(stderr, "Byteds written: %d\n", write(fd, g_varint_buffer, end - g_varint_buffer));
+  write(fd, g_varint_buffer, end - g_varint_buffer);
 }
 
 void WriteFixed32ToFile(int fd, uint32_t value) {

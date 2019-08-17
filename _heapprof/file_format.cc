@@ -560,28 +560,8 @@ bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
   if (verbose) {
     fprintf(stderr, "Writing index with %zd entries\n", snapshot_starts.size());
   }
-#ifdef __clang__
-  fprintf(stderr, "clang defined\n");
-#endif
-#ifdef __GNUC__
-  fprintf(stderr, "gnuc %d\n", __GNUC__);
-#endif
-#ifdef _MSC_VER
-  fprintf(stderr, "msc_ver %d\n", _MSC_VER);
-#endif
-#ifdef __GLIBC__
-  fprintf(stderr, "glibc\n");
-#endif
-#ifdef ABSL_IS_LITTLE_ENDIAN
-  fprintf(stderr, "little\n");
-#endif
-#ifdef ABSL_IS_BIG_ENDIAN
-  fprintf(stderr, "big\n");
-#endif
   uint64_t index_offset = static_cast<uint64_t>(lseek(hpc, 0, SEEK_CUR));
-  fprintf(stderr, "lseek finds %llx\n", index_offset);
   index_offset = absl::ghtonll(index_offset);
-  fprintf(stderr, "Writing index offset of %llx\n", index_offset);
   pwrite(hpc, &index_offset, sizeof(index_offset), index_offset_location);
 
   WriteFixed32ToFile(hpc, kIndexMagic);
@@ -650,6 +630,7 @@ PyObject *ReadDigestMetadata(int fd) {
 
   const float initial_time = initial_secs + 1e-9 * initial_nsec;
   const float interval_time = 1e-3 * interval_msec;
+  fprintf(stderr, "Successfully read HPC header; it %f int %f\n", initial_time, interval_time);
   return Py_BuildValue("ffO", initial_time, interval_time, offsets.release());
 }
 

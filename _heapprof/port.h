@@ -81,17 +81,15 @@ inline int Log2RoundUp(uint64_t x) {
 #ifdef _WIN64
 // Seriously, Microsoft? You don't have pwrite? Normal people implement write *on top of* pwrite.
 inline ssize_t pwrite(int fd, const void *buf, size_t nbytes, off_t offset) {
-  fprintf(stderr, "pwrite %lld bytes at %x\n", nbytes, offset);
   const off_t pos = lseek(fd, 0, SEEK_CUR);
-  fprintf(stderr, "offset was %x\n", pos);
-  const off_t writepos = lseek(fd, offset, SEEK_SET);
-  fprintf(stderr, "new offset is %x\n", writepos);
+  lseek(fd, offset, SEEK_SET);
   const ssize_t written = write(fd, buf, nbytes);
-  fprintf(stderr, "wrote %lld bytes\n", written);
   lseek(fd, pos, SEEK_SET);
   return written;
 }
 
+// _O_BINARY has no POSIX equivalent, but if you don't set it, it will default to a text mode that
+// will do "helpful" things like translate 0x0a to 0x0d0a when you write it.
 #define WRITE_MODE _O_WRONLY | _O_CREAT | _O_TRUNC | _O_BINARY
 #define READ_MODE _O_RDONLY | _O_BINARY
 
