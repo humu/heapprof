@@ -457,11 +457,13 @@ bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
   WriteFixed64ToFile(hpc, seconds);
   const uint64_t nsec = static_cast<uint64_t>(1e9 * (hpm.initial_time - seconds));
   WriteFixed64ToFile(hpc, nsec);
+  fprintf(stderr, "After 64's offset is %llx\n", static_cast<uint64_t>(lseek(hpc, 0, SEEK_CUR)));
   WriteVarintToFile(hpc, interval_msec);
+  fprintf(stderr, "After varint offset is %llx\n", static_cast<uint64_t>(lseek(hpc, 0, SEEK_CUR)));
   // This is where we're going to come back later and write the index location.
   const off_t index_offset_location = lseek(hpc, 0, SEEK_CUR);
   fprintf(stderr, "Wrote to disk: initial seconds %llx nsec %llx interval %x offset %llx\n",
-      seconds, nsec, interval_msec, index_offset_location);
+      seconds, nsec, interval_msec, static_cast<uint64_t>(index_offset_location));
 
   WriteFixed64ToFile(hpc, 0);
 
