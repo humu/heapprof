@@ -11,7 +11,7 @@ void WriteVarintToFile(int fd, uint64_t value) {
   for (uint8_t *p = g_varint_buffer; p < end; ++p) {
     fprintf(stderr, "%02x", *p);
   }
-  fprintf(stderr, "\n");
+  fprintf(stderr, " ptr %p size %d\n", g_varint_buffer, end - g_varint_buffer);
   write(fd, g_varint_buffer, end - g_varint_buffer);
 }
 
