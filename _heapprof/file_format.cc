@@ -455,11 +455,14 @@ bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
   WriteFixed32ToFile(hpc, 1);
   const uint64_t seconds = static_cast<uint64_t>(hpm.initial_time);
   WriteFixed64ToFile(hpc, seconds);
-  WriteFixed64ToFile(hpc,
-                     static_cast<uint64_t>(1e9 * (hpm.initial_time - seconds)));
+  const uint64_t nsec = static_cast<uint64_t>(1e9 * (hpm.initial_time - seconds));
+  WriteFixed64ToFile(hpc, nsec);
   WriteVarintToFile(hpc, interval_msec);
   // This is where we're going to come back later and write the index location.
   const off_t index_offset_location = lseek(hpc, 0, SEEK_CUR);
+  fprintf(stderr, "Wrote to disk: initial seconds %llx nsec %llx interval %x offset %llx\n",
+      seconds, nsec, interval_msec, index_offset_location);
+
   WriteFixed64ToFile(hpc, 0);
 
   // Now, let's write the entries.
