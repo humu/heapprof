@@ -56,22 +56,25 @@ class EndToEndTest(unittest.TestCase):
             list(range(100_000))
             heapprof.stop()
 
-            reader = heapprof.Reader(hpxFile)
-            # No digest yet, so we can't check elapsed time.
-            with self.assertRaises(AssertionError):
-                reader.elapsedTime()
+            # NB: Most uses don't really need to use a with statement here -- it cleans up on
+            # __del__ -- , but on some platforms the TemporaryDirectory exit will fail if the
+            # reader is still open.
+            with heapprof.Reader(hpxFile) as reader:
+                # No digest yet, so we can't check elapsed time.
+                with self.assertRaises(AssertionError):
+                    reader.elapsedTime()
 
-            # Make a digest with 10-millisecond intervals and no rounding.
-            reader.makeDigest(timeInterval=0.01, precision=0, verbose=True)
+                # Make a digest with 10-millisecond intervals and no rounding.
+                reader.makeDigest(timeInterval=0.01, precision=0, verbose=True)
 
-            hexdump(hpxFile + '.hpc')
+                hexdump(hpxFile + '.hpc')
 
-            self.assertGreaterEqual(reader.elapsedTime(), 0.05)
-            self.assertAlmostEqual(reader.snapshotInterval(), 0.01)
-            for index, snapshot in enumerate(reader.snapshots()):
-                self.assertAlmostEqual(index * reader.snapshotInterval(), snapshot.relativeTime)
-                # It would be nice to do some more sophisticated testing here.
-                self.assertGreater(len(snapshot.usage), 0)
+                self.assertGreaterEqual(reader.elapsedTime(), 0.05)
+                self.assertAlmostEqual(reader.snapshotInterval(), 0.01)
+                for index, snapshot in enumerate(reader.snapshots()):
+                    self.assertAlmostEqual(index * reader.snapshotInterval(), snapshot.relativeTime)
+                    # It would be nice to do some more sophisticated testing here.
+                    self.assertGreater(len(snapshot.usage), 0)
 
 
 if __name__ == "__main__":

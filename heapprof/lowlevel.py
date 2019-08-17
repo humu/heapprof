@@ -105,12 +105,16 @@ class HPM(object):
         # This number is bigger than the biggest valid trace index.
         self.rawTrace(1 << 31)
 
+    def close(self) -> None:
+        if hasattr(self, "_mdfile"):
+            self._mdfile.close()
+            delattr(self, "_mdfile")
+
     ############################################################################################
     # Implementation details beyond this point.
 
     def __del__(self) -> None:
-        if hasattr(self, "_mdfile"):
-            self._mdfile.close()
+        self.close()
 
     def _makeHeapTrace(self, rawTrace: Optional[RawTrace]) -> Optional[HeapTrace]:
         if not rawTrace:
@@ -184,8 +188,7 @@ class HPC(Sequence[Snapshot]):
         )
 
     def __del__(self) -> None:
-        if hasattr(self, "_file"):
-            self._file.close()
+        self.close()
 
     def __len__(self) -> int:
         return len(self.offsets)
@@ -204,6 +207,11 @@ class HPC(Sequence[Snapshot]):
 
     def __contains__(self, key: object) -> bool:
         return key in self.offsets
+
+    def close(self) -> None:
+        if hasattr(self, "_file"):
+            self._file.close()
+            delattr(self, "_file")
 
     @classmethod
     def make(cls, filebase: str, timeInterval: float, precision: float, verbose: bool) -> None:

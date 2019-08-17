@@ -62,6 +62,19 @@ class Reader(object):
             # Python interpreter.
             self._openHPC()
 
+    def close(self) -> None:
+        """Close the reader. After doing this, the reader is no longer usable."""
+        self._hpm.close()
+        if self._hpc:
+            self._hpc.close()
+
+    def __enter__(self) -> 'Reader':
+        return self
+
+    def __exit__(self, *args) -> bool:
+        self.close()
+        return False
+
     ###########################################################################################
     # High-level API access to the profile
     #
