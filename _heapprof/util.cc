@@ -7,6 +7,11 @@ static uint8_t g_varint_buffer[VARINT_BUFFER_SIZE];
 
 void WriteVarintToFile(int fd, uint64_t value) {
   const uint8_t *end = UnsafeAppendVarint(g_varint_buffer, value);
+  fprintf(stderr, "Write varint %llx: ", value);
+  for uint8_t *p = g_varint_buffer; p < end; ++p) {
+    fprintf(stderr, "%02x", *p);
+  }
+  fprintf(stderr, "\n");
   write(fd, g_varint_buffer, end - g_varint_buffer);
 }
 
