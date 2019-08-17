@@ -574,9 +574,9 @@ bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
   fprintf(stderr, "big\n");
 #endif
   uint64_t index_offset = static_cast<uint64_t>(lseek(hpc, 0, SEEK_CUR));
-  fprintf(stderr, "lseek finds %x\n", index_offset);
+  fprintf(stderr, "lseek finds %llx\n", index_offset);
   index_offset = absl::ghtonll(index_offset);
-  fprintf(stderr, "Writing index offset of %x\n", index_offset);
+  fprintf(stderr, "Writing index offset of %llx\n", index_offset);
   pwrite(hpc, &index_offset, sizeof(index_offset), index_offset_location);
 
   WriteFixed32ToFile(hpc, kIndexMagic);
@@ -612,11 +612,11 @@ PyObject *ReadDigestMetadata(int fd) {
     return nullptr;
   }
 
-  fprintf(stderr, "Initial read: index offset %08x isec %llu insec %llu int %llu\n",
+  fprintf(stderr, "Initial read: index offset %08llx isec %llu insec %llu int %llu\n",
       index_offset, initial_secs, initial_nsec, interval_msec);
 
   if (lseek(fd, index_offset, SEEK_SET) != static_cast<off_t>(index_offset)) {
-    PyErr_Format(PyExc_ValueError, "Invalid index offset %llu in metadata",
+    PyErr_Format(PyExc_ValueError, "Invalid index offset %llx in metadata",
                  index_offset);
     return nullptr;
   }
