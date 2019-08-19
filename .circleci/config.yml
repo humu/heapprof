@@ -19,7 +19,8 @@ orbs:
   win: circleci/windows@1.0.0
 
 jobs:
-  linux_x86_64:
+  # Test and build wheels for Linux.
+  linux:
     executor: humu-ci-docker-image
     working_directory: ~/repo
     steps:
@@ -36,7 +37,7 @@ jobs:
           command: |
             python -m venv venv
             . venv/bin/activate
-            pip install --upgrade pip setuptools cmake wheel
+            pip install --upgrade pip setuptools cmake wheel cibuildwheel
       - save_cache:
           paths:
             - ./venv
@@ -56,7 +57,7 @@ jobs:
           name: build_wheel
           command: |
             . venv/bin/activate
-            python setup.py bdist_wheel
+            cibuildwheel --outputdir wheels
 
       - store_artifacts:
           path: dist
@@ -134,14 +135,44 @@ jobs:
           path: test-reports
           destination: test-reports
 
+  os_x:
+    working_directory: ~/repo
+    macos:
+      xcode: "10.0.0"
+    steps:
+      - checkout
+      - setup_remote_docker
+      - restore_cache:
+          keys:
+            - v1-manylinux-dependencies
+      - run:
+          name: install_dependencies
+          command: |
+            python -m venv venv
+            . venv/bin/activate
+            pip install --upgrade pip setuptools cmake wheel cibuildwheel
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-manylinux-dependencies
+      - run:
+          name: build_wheel
+          command: |
+            . venv/bin/activate
+            python setup.py test
+            cibuildwheel --outputdir wheels
+      - store_artifacts:
+          path: wheels/
+
 
 workflows:
   version: 2
-  test:
+  test-and-build:
     jobs:
       - lint
-      - linux_x86_64
+      - linux
       - windows_64
+      - os_x
 
 
 # Only notify slack about build failures/fixes on master!
