@@ -44,3 +44,5 @@ Some known future features that we'll probably want:
 * Provide additional file formats of output to work with other kinds of visualization.
 * Measure and tune system performance.
 * Make the process of picking sampling rates less manual.
+* Add support for more platforms. (Win32? Android? iOS?)
+* Implement a CircleCI orb for Windows with Python + CMake to speed up builds.
