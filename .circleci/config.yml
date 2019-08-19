@@ -136,34 +136,11 @@ jobs:
           path: test-reports
           destination: test-reports
 
-  macos:
-    working_directory: ~/repo
-    macos:
-      xcode: "10.0.0"
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - v1-manylinux-dependencies
-      - run:
-          name: install_dependencies
-          command: |
-            python -m venv venv
-            . venv/bin/activate
-            pip install --upgrade pip setuptools cmake wheel cibuildwheel
-      - save_cache:
-          paths:
-            - ./venv
-          key: v1-manylinux-dependencies
-      - run:
-          name: build_wheel
-          command: |
-            . venv/bin/activate
-            python setup.py test
-            cibuildwheel --output-dir wheels --platform macos
-      - store_artifacts:
-          path: wheels/
-
+  # TODO: Add a macos target to build those wheels. Since we're doing all our deploys from OS X
+  # machines right now, we don't need this yet, but we should add it. The style can follow the same
+  # style as the linux target above, as well as the style of the macos target in the examples for
+  # the cibuildwheel pip package, but also needs to first set up brew -> pyenv -> python 3.7 since
+  # why would OS X come with a modern Python on it?
 
 workflows:
   version: 2
@@ -172,7 +149,6 @@ workflows:
       - lint
       - linux
       - windows_64
-      - macos
 
 
 # Only notify slack about build failures/fixes on master!
