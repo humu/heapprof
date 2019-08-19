@@ -20,12 +20,11 @@ orbs:
 
 jobs:
   # Test and build wheels for Linux.
-  linux:
+  test:
     executor: humu-ci-docker-image
     working_directory: ~/repo
     steps:
       - checkout
-      - setup_remote_docker
 
       # Install dependencies, with caching.
       - restore_cache:
@@ -53,21 +52,6 @@ jobs:
       - store_artifacts:
           path: test-reports
           destination: test-reports
-
-      - run:
-          name: build_wheel
-          environment:
-            # Skip all versions prior to 3.7. Expressing this as which to skip, rather than which to
-            # build, because this is expected to work correctly in versions > 3.7.
-            CIBW_SKIP: cp27-* cp34-* cp35-* cp36-*
-          command: |
-            . venv/bin/activate
-            cibuildwheel --output-dir wheels --platform linux
-
-      - store_artifacts:
-          path: dist
-          destination: wheel
-
 
   lint:
     executor: humu-ci-docker-image
@@ -102,6 +86,33 @@ jobs:
       - store_artifacts:
           path: test-reports
           destination: test-reports
+
+  linux:
+    executor: humu-ci-docker-image
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: install_dependencies
+          command: |
+            python -m venv venv
+            . venv/bin/activate
+            pip install --upgrade pip setuptools cmake wheel cibuildwheel
+      - run:
+          name: build_wheel
+          environment:
+            # Skip all versions prior to 3.7. Expressing this as which to skip, rather than which to
+            # build, because this is expected to work correctly in versions > 3.7.
+            CIBW_SKIP: cp27-* cp34-* cp35-* cp36-*
+            CIBW_TEST_COMMAND: python setup.py test
+          command: |
+            . venv/bin/activate
+            cibuildwheel --output-dir wheels --platform linux
+
+      - store_artifacts:
+          path: dist
+          destination: wheel
 
   # Use this to cross-compile a Windows binary and make a wheel. The resulting artifacts from
   # release candidates go into PIP.
@@ -150,6 +161,7 @@ workflows:
   version: 2
   test-and-build:
     jobs:
+      - test
       - lint
       - linux
       - windows_64
