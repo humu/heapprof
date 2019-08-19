@@ -4,35 +4,9 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <string.h>
-#include <time.h>
 #include <string>
 #include "Python.h"
-
-// A note here: We need to achieve some portable operations which aren't yet
-// available in the C++ standard, but the portable logic for them is
-// depressingly long. So we include ABSL, which has extremely nice
-// implementations of them. However, these are in the base/internal directory,
-// because the ABSL team hasn't decided to make them formally part of the spec
-// yet. At some point, these are definitely going to be moved out of internal,
-// just Not Quite Yet. (Signed, the original author of endian.h and quite a bit
-// of the other stuff in this directory; sigh. -- zunger@)
-#include "absl/base/internal/bits.h"
-#include "absl/base/internal/endian.h"
-
-// C++20 will have a standardized version of this. Until then, we use
-// compiler-specific directives, which are notably missing in MSVC.
-#if __clang__ || __GNUC__
-#define PREDICT_FALSE(expr) __builtin_expect(static_cast<bool>(expr), 0)
-#define PREDICT_TRUE(expr) __builtin_expect(static_cast<bool>(expr), 1)
-#else
-#define PREDICT_FALSE(expr) (expr)
-#define PREDICT_TRUE(expr) (expr)
-#endif
-
-// Return ceil(log2(x)).
-inline int Log2RoundUp(uint64_t x) {
-  return x ? 64 - absl::base_internal::CountLeadingZeros64(x - 1) : 0;
-}
+#include "_heapprof/port.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // File I/O helpers

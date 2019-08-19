@@ -432,11 +432,12 @@ bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
   WriteFixed32ToFile(hpc, 1);
   const uint64_t seconds = static_cast<uint64_t>(hpm.initial_time);
   WriteFixed64ToFile(hpc, seconds);
-  WriteFixed64ToFile(hpc,
-                     static_cast<uint64_t>(1e9 * (hpm.initial_time - seconds)));
+  const uint64_t nsec = static_cast<uint64_t>(1e9 * (hpm.initial_time - seconds));
+  WriteFixed64ToFile(hpc, nsec);
   WriteVarintToFile(hpc, interval_msec);
   // This is where we're going to come back later and write the index location.
   const off_t index_offset_location = lseek(hpc, 0, SEEK_CUR);
+
   WriteFixed64ToFile(hpc, 0);
 
   // Now, let's write the entries.
@@ -453,7 +454,7 @@ bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
   struct timespec start_time;
   off_t total_bytes;
   if (verbose) {
-    clock_gettime(CLOCK_REALTIME, &start_time);
+    gettime(&start_time);
     total_bytes = lseek(hpd, 0, SEEK_END);
     lseek(hpd, 0, SEEK_SET);
     fprintf(stderr, "Digesting %s: ", filebase);
@@ -498,7 +499,7 @@ bool MakeDigestFile(const char *filebase, int interval_msec, double precision,
 
     if (verbose && !(events_read % 500000)) {
       struct timespec now;
-      clock_gettime(CLOCK_REALTIME, &now);
+      gettime(&now);
       struct timespec delta;
       DeltaTime(start_time, now, &delta);
       const double time_used = delta.tv_sec + 1e-9 * delta.tv_nsec;
@@ -568,7 +569,7 @@ PyObject *ReadDigestMetadata(int fd) {
   }
 
   if (lseek(fd, index_offset, SEEK_SET) != static_cast<off_t>(index_offset)) {
-    PyErr_Format(PyExc_ValueError, "Invalid index offset %llu in metadata",
+    PyErr_Format(PyExc_ValueError, "Invalid index offset %llx in metadata",
                  index_offset);
     return nullptr;
   }

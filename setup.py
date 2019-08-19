@@ -1,13 +1,16 @@
 import os
+import sys
 from distutils.command.build_ext import build_ext as _build_ext  # type: ignore
 
 from setuptools import Extension, find_packages, setup
 
 with open(
-    os.path.join(os.path.abspath(os.path.dirname(__file__)), "README.md"),
-    encoding="utf-8",
+    os.path.join(os.path.abspath(os.path.dirname(__file__)), "README.md"), encoding="utf-8"
 ) as f:
     long_description = f.read()
+
+WINDOWS = sys.platform in ('win32', 'cygwin')
+CMAKE = 'CMake' if WINDOWS else 'cmake'
 
 
 # Our C++ library depends on ABSL. This insane monkey-patch is the simplest way I can figure out to
@@ -16,19 +19,12 @@ class BuildExtWithABSL(_build_ext):
     def run(self) -> None:
         if not os.path.exists("build/absl"):
             self.mkpath("build/absl")
-            self.spawn(
-                [
-                    "git",
-                    "clone",
-                    "https://github.com/abseil/abseil-cpp.git",
-                    "build/absl",
-                ]
-            )
+            self.spawn(["git", "clone", "https://github.com/abseil/abseil-cpp.git", "build/absl"])
 
         pwd = os.getcwd()
         os.chdir("build/absl")
-        self.spawn(["cmake", "."])
-        self.spawn(["cmake", "--build", ".", "--target", "base"])
+        self.spawn([CMAKE, "."])
+        self.spawn([CMAKE, "--build", ".", "--target", "base"])
         os.chdir(pwd)
 
         super().run()
@@ -47,11 +43,24 @@ cppmodule = Extension(
         "_heapprof/stats_gatherer.cc",
         "_heapprof/util.cc",
     ],
+    depends=[
+        "_heapprof/abstract_profiler.h",
+        "_heapprof/file_format.h",
+        "_heapprof/malloc_patch.h",
+        "_heapprof/port.h",
+        "_heapprof/profiler.h",
+        "_heapprof/reentrant_scope.h",
+        "_heapprof/sampler.h",
+        "_heapprof/scoped_object.h",
+        "_heapprof/simple_hash.h",
+        "_heapprof/stats_gatherer.h",
+        "_heapprof/util.h",
+    ],
     include_dirs=[".", "build/absl"],
-    library_dirs=["build/absl/absl/base"],
+    library_dirs=["build\\absl\\absl\\base\\Debug" if WINDOWS else "build/absl/absl/base"],
     libraries=["absl_base"],
     define_macros=[("PY_SSIZE_T_CLEAN", None)],
-    extra_compile_args=["-std=c++11"],
+    extra_compile_args=["" if WINDOWS else "-std=c++11"],
 )
 
 setup(

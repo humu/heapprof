@@ -27,10 +27,6 @@ accumulated.
 
 ## Installation and system requirements
 
-heapprof is designed to work with Python 3.7 or greater, using the CPython runtime. If you are using
-an older version of Python or a less-common runtime, this package won't work, and you'll get strange
-errors if you try.
-
 To install heapprof, simply run `pip install heapprof`. Some of heapprof's data visualization
 features require additional packages as well:
 
@@ -45,9 +41,15 @@ features require additional packages as well:
     `npm install -g speedscope`. (See its [GitHub site](https://github.com/jlfwong/speedscope) for
     more installation details if you aren't familiar with running local JavaScript code)
 
-The 1.0.0 release of heapprof does not contain precompiled Windows images; in order to use this on a
-Windows machine, you will need a C/C++ compilation environment. This will be fixed in a coming
-maintenance release.
+> #### System Requirements
+> heapprof is designed to work with Python 3.7 or greater, using the CPython runtime. If you are using
+> an older version of Python or a less-common runtime, this package won't work, and you'll get strange
+> errors if you try.
+>
+> The current heapprof release includes binaries for Linux x86_64, OS X, and 64-bit Windows. On
+> other platforms, you can try compiling from a source distribution; if you have to make portability
+> changes (which you almost certainly will), those would be good to commit back to the main branch.
+
 
 ## Running your code
 
