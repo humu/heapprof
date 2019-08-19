@@ -95,6 +95,7 @@ setup(
     python_requires=">=3.7",
     ext_modules=[cppmodule],
     packages=find_packages(exclude=["tests", "tools", "docs", "docs_src"]),
+    install_requires=["cmake"],
     # Testing
     test_suite="nose.collector",
     tests_require=["nose"],

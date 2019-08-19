@@ -53,9 +53,9 @@ scheme.</p></li>
 <li><p>Clean the local image by running <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clean</span> <span class="pre">-xfd</span></code></p></li>
 <li><p>Build the source wheel by running <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">sdist</span></code></p></li>
 <li><p>Build the OS X wheel by running <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">bdist_wheel</span></code></p></li>
-<li><p>Go to <code class="docutils literal notranslate"><span class="pre">https://circleci.com/gh/humu/heapprof/tree/master</span></code> and click on the links for the
-most recent <code class="docutils literal notranslate"><span class="pre">linux_x86_64</span></code> and <code class="docutils literal notranslate"><span class="pre">windows_64</span></code> jobs. For each of them, click on the “Artifacts” tab
-and download the corresponding wheels. Move them to your <code class="docutils literal notranslate"><span class="pre">dist</span></code> directory along with the wheels
+<li><p>Go to <code class="docutils literal notranslate"><span class="pre">https://circleci.com/gh/humu/heapprof/tree/master</span></code> and click on the link for the
+most recent <code class="docutils literal notranslate"><span class="pre">windows_64</span></code> job. For each of them, click on the “Artifacts” tab
+and download the corresponding wheel. Move it to your <code class="docutils literal notranslate"><span class="pre">dist</span></code> directory along with the wheels
 created in the previous step.</p></li>
 <li><p>Run <code class="docutils literal notranslate"><span class="pre">twine</span> <span class="pre">upload</span> <span class="pre">dist/*</span></code> to push the new repository version.</p></li>
 <li><p>Go to <code class="docutils literal notranslate"><span class="pre">https://pypi.org/project/heapprof/</span></code> and verify that the new version is live.</p></li>
