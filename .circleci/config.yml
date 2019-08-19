@@ -56,6 +56,10 @@ jobs:
 
       - run:
           name: build_wheel
+          environment:
+            # Skip all versions prior to 3.7. Expressing this as which to skip, rather than which to
+            # build, because this is expected to work correctly in versions > 3.7.
+            CIBW_SKIP: cp27-* cp34-* cp35-* cp36-*
           command: |
             . venv/bin/activate
             cibuildwheel --output-dir wheels --platform linux
