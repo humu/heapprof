@@ -16,7 +16,7 @@ executors:
       # - image: circleci/mongo:3.4.4
 
 orbs:
-  win: circleci/windows_64@1.0.0
+  win: circleci/windows@1.0.0
 
 jobs:
   linux_x86_64:
