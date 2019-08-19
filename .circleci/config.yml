@@ -57,7 +57,7 @@ jobs:
           name: build_wheel
           command: |
             . venv/bin/activate
-            cibuildwheel --outputdir wheels
+            cibuildwheel --output-dir wheels --platform linux
 
       - store_artifacts:
           path: dist
@@ -135,7 +135,7 @@ jobs:
           path: test-reports
           destination: test-reports
 
-  os_x:
+  macos:
     working_directory: ~/repo
     macos:
       xcode: "10.0.0"
@@ -160,7 +160,7 @@ jobs:
           command: |
             . venv/bin/activate
             python setup.py test
-            cibuildwheel --outputdir wheels
+            cibuildwheel --output-dir wheels --platform macos
       - store_artifacts:
           path: wheels/
 
@@ -172,7 +172,7 @@ workflows:
       - lint
       - linux
       - windows_64
-      - os_x
+      - macos
 
 
 # Only notify slack about build failures/fixes on master!
