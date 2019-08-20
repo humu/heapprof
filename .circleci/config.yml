@@ -19,7 +19,7 @@ orbs:
   win: circleci/windows@1.0.0
 
 jobs:
-  linux_x86_64:
+  test:
     executor: humu-ci-docker-image
     working_directory: ~/repo
     steps:
@@ -51,16 +51,6 @@ jobs:
       - store_artifacts:
           path: test-reports
           destination: test-reports
-
-      - run:
-          name: build_wheel
-          command: |
-            . venv/bin/activate
-            python setup.py bdist_wheel
-
-      - store_artifacts:
-          path: dist
-          destination: wheel
 
 
   lint:
@@ -140,7 +130,7 @@ workflows:
   test:
     jobs:
       - lint
-      - linux_x86_64
+      - test
       - windows_64
 
 
