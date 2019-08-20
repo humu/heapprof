@@ -1,6 +1,9 @@
+import distutils.spawn
+import importlib
 import os
 import sys
 from distutils.command.build_ext import build_ext as _build_ext  # type: ignore
+from typing import Optional
 
 from setuptools import Extension, find_packages, setup
 
@@ -11,6 +14,42 @@ with open(
 
 WINDOWS = sys.platform in ('win32', 'cygwin')
 CMAKE = 'CMake' if WINDOWS else 'cmake'
+EGGS_DIR = './.eggs'
+
+
+def findEgg(prefix: str) -> str:
+    """Find an egg whose name begins with the given string. Raises if this egg does not exist or is
+    not unique.
+    """
+    found: Optional[str] = None
+    for dirEntry in os.scandir(EGGS_DIR):
+        if dirEntry.is_dir() and dirEntry.name.startswith(prefix):
+            if found is not None:
+                raise ValueError(
+                    f'Found multiple eggs beginning with "{prefix}": {found} and '
+                    f'{dirEntry.name}'
+                )
+            found = dirEntry.name
+    if found is None:
+        raise ValueError(f'Found no egg beginning with "{prefix}"')
+    return os.path.join(EGGS_DIR, found)
+
+
+def findCMake() -> str:
+    # If cmake is already installed and available, we're good.
+    if distutils.spawn.find_executable(CMAKE):
+        return CMAKE
+
+    # If cmake was only present because it's in setup_requires, that means that the egg is
+    # downloaded, but the binary is hidden inside! Get its path.
+    sys.path.append(findEgg('cmake-'))
+    module = importlib.import_module('cmake')
+
+    # The path of the cmake binary!
+    cmake = os.path.join(module.CMAKE_BIN_DIR, CMAKE)
+    # Ensure it's executable; this isn't always true in the wheel.
+    os.chmod(cmake, 0o777)
+    return cmake
 
 
 # Our C++ library depends on ABSL. This insane monkey-patch is the simplest way I can figure out to
@@ -21,10 +60,12 @@ class BuildExtWithABSL(_build_ext):
             self.mkpath("build/absl")
             self.spawn(["git", "clone", "https://github.com/abseil/abseil-cpp.git", "build/absl"])
 
+        cmake = findCMake()
+
         pwd = os.getcwd()
         os.chdir("build/absl")
-        self.spawn([CMAKE, "."])
-        self.spawn([CMAKE, "--build", ".", "--target", "base"])
+        self.spawn([cmake, "."])
+        self.spawn([cmake, "--build", ".", "--target", "base"])
         os.chdir(pwd)
 
         super().run()
@@ -66,7 +107,7 @@ cppmodule = Extension(
 setup(
     # About this project
     name="heapprof",
-    version="1.0.1a2",
+    version="1.0.1a3",
     description="Logging heap profiler",
     long_description=long_description,
     long_description_content_type="text/markdown",
