@@ -66,7 +66,7 @@ cppmodule = Extension(
 setup(
     # About this project
     name="heapprof",
-    version="1.0.1.a1",
+    version="1.0.1a2",
     description="Logging heap profiler",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -95,7 +95,7 @@ setup(
     python_requires=">=3.7",
     ext_modules=[cppmodule],
     packages=find_packages(exclude=["tests", "tools", "docs", "docs_src"]),
-    install_requires=["cmake"],
+    setup_requires=["cmake"],
     # Testing
     test_suite="nose.collector",
     tests_require=["nose"],
