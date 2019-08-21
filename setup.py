@@ -107,7 +107,7 @@ cppmodule = Extension(
 setup(
     # About this project
     name="heapprof",
-    version="1.0.1a5",
+    version="1.0.1",
     description="Logging heap profiler",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -116,7 +116,7 @@ setup(
     author_email="zunger@humu.com",
     license="MIT",
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: MIT License",
         "Intended Audience :: Developers",
         "Programming Language :: Python :: 3.7",
