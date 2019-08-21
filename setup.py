@@ -97,7 +97,7 @@ cppmodule = Extension(
         "_heapprof/stats_gatherer.h",
         "_heapprof/util.h",
     ],
-    include_dirs=[".", "build/absl"],
+    include_dirs=[os.getcwd(), "build/absl"],
     library_dirs=["build\\absl\\absl\\base\\Debug" if WINDOWS else "build/absl/absl/base"],
     libraries=["absl_base"],
     define_macros=[("PY_SSIZE_T_CLEAN", None)],
@@ -107,7 +107,7 @@ cppmodule = Extension(
 setup(
     # About this project
     name="heapprof",
-    version="1.0.1a3",
+    version="1.0.1a5",
     description="Logging heap profiler",
     long_description=long_description,
     long_description_content_type="text/markdown",
