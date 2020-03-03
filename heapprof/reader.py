@@ -400,7 +400,7 @@ class Reader(object):
         if not isinstance(when, Snapshot):
             when = self.snapshotAt(when)
         with open(filename, "w") as output:
-            self.asFlameGraph(when, output)
+            self.flameGraphAt(when, output)
 
     ###########################################################################################
     # Implementation details
