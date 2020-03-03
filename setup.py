@@ -107,7 +107,7 @@ cppmodule = Extension(
 setup(
     # About this project
     name="heapprof",
-    version="1.0.1",
+    version="1.0.2",
     description="Logging heap profiler",
     long_description=long_description,
     long_description_content_type="text/markdown",
