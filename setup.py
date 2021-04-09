@@ -58,7 +58,14 @@ class BuildExtWithABSL(_build_ext):
     def run(self) -> None:
         if not os.path.exists("build/absl"):
             self.mkpath("build/absl")
-            self.spawn(["git", "clone", "https://github.com/abseil/abseil-cpp.git", "build/absl"])
+            self.spawn([
+                "git",
+                "clone",
+                "--branch",
+                "lts_2021_03_24",
+                "https://github.com/abseil/abseil-cpp.git",
+                "build/absl",
+            ])
 
         cmake = findCMake()
 
