@@ -51,13 +51,15 @@ inline void gettime(struct timespec *spec) {
 // A note here: We need to achieve some portable operations which aren't yet
 // available in the C++ standard, but the portable logic for them is
 // depressingly long. So we include ABSL, which has extremely nice
-// implementations of them. However, these are in the base/internal directory,
-// because the ABSL team hasn't decided to make them formally part of the spec
-// yet. At some point, these are definitely going to be moved out of internal,
-// just Not Quite Yet. (Signed, the original author of endian.h and quite a bit
-// of the other stuff in this directory; sigh. -- zunger@)
-#include "absl/base/internal/bits.h"
+// implementations of them.
+#include "absl/numeric/bits.h"
+
 // This file defines ghton[size] and gntoh[size].
+// However, these are in the base/internal directory, because the ABSL team
+// hasn't decided to make them formally part of the spec yet. At some point,
+// these are definitely going to be moved out of internal, just Not Quite Yet.
+// (Signed, the original author of endian.h and quite a bit of the other stuff
+// in this directory; sigh. -- zunger@)
 #include "absl/base/internal/endian.h"
 
 // C++20 will have a standardized version of this. Until then, we use
@@ -72,7 +74,7 @@ inline void gettime(struct timespec *spec) {
 
 // Return ceil(log2(x)).
 inline int Log2RoundUp(uint64_t x) {
-  return x ? 64 - absl::base_internal::CountLeadingZeros64(x - 1) : 0;
+  return x ? 64 - absl::countl_zero(x - 1) : 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
